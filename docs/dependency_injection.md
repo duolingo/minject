@@ -65,7 +65,7 @@ the web service now requires some sort of initialize routine which imports and
 calls all of those init() functions.
 
 Another issue that makes this more complex is the references to the loader and
-the cache, these are the dependencies. In order to initialize the manager you
+the cache (the "dependencies"). In order to initialize the manager you
 need to know how to construct the loader and the cache, and perhaps the loader
 and the cache have their own dependencies, and those further have their own.
 This can result in long chains of constructor calls that need to be changed
@@ -81,7 +81,7 @@ a registry instance is created, it can be used to initialize objects and
 provide references to dependency objects, while making it easy to configure
 and customize those objects based on the environment. This Registry object
 can be a singleton if needed, in Flask a great place to store it is in the
-flask.current_app object which is available in any request handler. You can
+flask.current\_app object which is available in any request handler. You can
 then treat the registry object like a dictionary to get out a class.
 
 ```
@@ -100,11 +100,12 @@ def get_phrase(self):
 
 The registry will return an initialized instance of PhraseList which you can
 now use. The registry will store this instance, and return it on future calls.
+
 If you have a class that needs init arguments, you can tell the registry what
 values to use with the annotation system.
 
 ```
-@registry.bind(phrases=['How are you, %s?', 'So long %s'))
+@registry.bind(phrases=['How are you, %s?', 'So long %s'])
 class PhraseList(object):
     def __init__(self, phrases):
         self._phrases = phrases
@@ -118,6 +119,15 @@ testing, you could then create an instance with another value. This really
 becomes powerful when combined with the registry.reference function.
 
 ```
+@registry.bind(url='http://localhost/my_phrases.txt')
+def PhraseLoader(object):
+    def __init__(self, url):
+        self._url = url
+
+    def load_phrases(self, url):
+        ...
+
+
 @registry.bind(loader=registry.reference(PhraseLoader),
                category='greetings')
 def PhraseBuilder(object):
