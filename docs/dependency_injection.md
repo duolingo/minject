@@ -24,10 +24,10 @@ nested dependencies, or are referenced from many different contexts. In Python
 web frameworks this can be especially problematic because handling of routes is
 often done with simple functions that are scattered across several modules.
 The common way of dealing with this is by creating global singletons that are
-used everywhere, but this can make configuration and unit testing very
-difficult. Below is an example of a program that uses this strategy:
+used everywhere, but this can make configuration and unit testing difficult.
+Below is an example of a program that uses this strategy:
 
-```
+```python
 class MyComplexThingManager(object):
     def __init__(thing_loader, thing_cache):
         self._loader = thing_loader
@@ -41,8 +41,8 @@ class MyComplexThingManager(object):
         self._cache.update(thing)
         return thing
 
-THING_MANAGER_INSTANCE = MyComplexThingManager(THING_LOADER_INSTANCE,
-                                               THING_CACHE_INSTANCE)
+THING_INSTANCE = MyComplexThingManager(THING_LOADER_INSTANCE,
+                                       THING_CACHE_INSTANCE)
 
 @app.route('/thing')
 def get_thing(self):
@@ -55,16 +55,17 @@ def get_thing(self):
 ```
 
 The problem with this approach is the global singleton instances. Any module
-that imports the module containing the global singleton will create an instance
-of the class automatically, and in this case perform an expensive cache fill
-operation. This will happen for unit tests, scripts and any other piece of code
-that unsuspectingly imports that module (or any other module that imports it in
-turn). To avoid the global singleton that initializes automatically, one could
-write an init_thing() function which instantiates these classes. Unfortunately
-the web service now requires some sort of initialize routine which imports and
-calls all of those init() functions.
+that imports the module containing the global singleton will create a new
+instance of the class automatically, and in this case perform an expensive
+cache fill operation. This will happen for unit tests, scripts and any other
+piece of code that unsuspectingly imports that module (or any other module that
+imports it in turn). To avoid the global singleton that initializes
+automatically, one could write an `init_thing()` function which instantiates
+these classes. Unfortunately, the web service now requires some sort of
+global initialize routine which imports and calls all of those `init_thing()`
+functions.
 
-Another issue that makes this more complex is the references to the loader and
+Another issue adding complexity is the references to the loader and
 the cache (the "dependencies"). In order to initialize the manager you
 need to know how to construct the loader and the cache, and perhaps the loader
 and the cache have their own dependencies, and those further have their own.
@@ -77,14 +78,14 @@ How does this library handle Dependency Injection?
 --------------------------------------------------
 
 This library contains a "Registry" module (duolingo.core.util.registry). Once
-a registry instance is created, it can be used to initialize objects and
+a `Registry` instance is created, it can be used to initialize objects and
 provide references to dependency objects, while making it easy to configure
-and customize those objects based on the environment. This Registry object
-can be a singleton if needed, in Flask a great place to store it is in the
-flask.current\_app object which is available in any request handler. You can
-then treat the registry object like a dictionary to get out a class.
+and customize those objects based on the environment. This `Registry` object
+can be a singleton if needed; in Flask, a great place to store it in is the
+`flask.current_app` object, which is available in any request handler. You can
+then treat the `Registry` object like a dictionary to get out a class.
 
-```
+```python
 app = flask.application()
 app.registry = registry.initialize()
 
@@ -99,12 +100,12 @@ def get_phrase(self):
 ```
 
 The registry will return an initialized instance of PhraseList which you can
-now use. The registry will store this instance, and return it on future calls.
+use. The registry will store this instance and return it on future calls.
 
 If you have a class that needs init arguments, you can tell the registry what
 values to use with the annotation system.
 
-```
+```python
 @registry.bind(phrases=['How are you, %s?', 'So long %s'])
 class PhraseList(object):
     def __init__(self, phrases):
@@ -116,9 +117,9 @@ class PhraseList(object):
 
 One reason this could be useful is if you want to try different phrases in
 testing, you could then create an instance with another value. This really
-becomes powerful when combined with the registry.reference function.
+becomes powerful when combined with the `registry.reference` function.
 
-```
+```python
 @registry.bind(url='http://localhost/my_phrases.txt')
 def PhraseLoader(object):
     def __init__(self, url):
@@ -140,20 +141,20 @@ def PhraseBuilder(object):
         return random.choice(phrases) % name
 ```
 
-Now you can have a chain of objects that depend on each other, perhaps the
-loader uses a PhraseCache to cache results that it gets from a PhraseApi.
-The PhraseApi may in turn share the same instance of ApiClient with the
-hypothetical UserApi and HistoryApi, each in separate modules.
+Now you can have a chain of objects that depend on each other; perhaps the
+loader uses a `PhraseCache` to cache results that it gets from a `PhraseApi`.
+The `PhraseApi` may in turn share the same instance of `ApiClient` with the
+hypothetical `UserApi` and `HistoryApi`, each in separate modules.
 
-In addition to bind, there is a define function which is useful when you
+In addition to `bind`, there is a `define` function which is useful when you
 don't need to write any new code in a new class, but just want to
-instantiate a generic class that already exists, you can also make use
-of the capability to pass init arguments to the reference function.
-Let's say we already have a class called GenericCache that handles caching
-objects, and a GenericLoader which will fallback to an api call if the
-object is missing from the cache
+instantiate a generic class that already exists. (You can also use this
+capability to pass init arguments to the reference function.)
+Let's say we already have a class called `GenericCache` that handles caching
+objects, and a `GenericLoader` which will fallback to an api call if the
+object is missing from the cache.
 
-```
+```python
 PhraseLoader = registry.define(GenericLoader,
     api=registry.reference(PhraseApi),
     cache=registry.reference(GenericCache, name="phrase", expire=60),
@@ -162,7 +163,7 @@ PhraseLoader = registry.define(GenericLoader,
 loader = registry[PhraseLoader]
 ```
 
-The loader variable will now reference an instance of the GenericLoader type,
-which was initialized using the provided api and cache arguments. Additionally,
-the cache argument will be a GenericCache initialized with the provided name
-and expiration time
+The `loader` variable will now reference an instance of the `GenericLoader`
+type that was initialized using the provided api and cache arguments.
+Additionally, the cache argument will be a `GenericCache` initialized with the
+provided name and expiration time.
