@@ -121,7 +121,7 @@ becomes powerful when combined with the `registry.reference` function.
 
 ```python
 @registry.bind(url='http://localhost/my_phrases.txt')
-def PhraseLoader(object):
+class PhraseLoader(object):
     def __init__(self, url):
         self._url = url
 
@@ -131,7 +131,7 @@ def PhraseLoader(object):
 
 @registry.bind(loader=registry.reference(PhraseLoader),
                category='greetings')
-def PhraseBuilder(object):
+class PhraseBuilder(object):
     def __init__(self, loader, category):
         self._loader = loader
         self._category = category
