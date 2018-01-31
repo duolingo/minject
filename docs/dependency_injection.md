@@ -77,7 +77,7 @@ difficult to configure these classes in different environments.
 How does this library handle Dependency Injection?
 --------------------------------------------------
 
-This library contains a "Registry" module (duolingo.base.util.registry). Once
+This library contains a "Registry" module (duolingo_base.util.registry). Once
 a `Registry` instance is created, it can be used to initialize objects and
 provide references to dependency objects, while making it easy to configure
 and customize those objects based on the environment. This `Registry` object
