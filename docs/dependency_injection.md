@@ -1,9 +1,6 @@
-Dependency Injection
-====================
+# Dependency Injection
 
-
-What is Dependency Injection?
------------------------------
+## What is Dependency Injection?
 
 [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection)
 is "a software design pattern that implements inversion of control for
@@ -14,9 +11,7 @@ and facilitate unit testing.
 The Spring Framework in Java in an example of a popular dependency injection
 framework.
 
-
-Why should I use it?
---------------------
+## Why should I use it?
 
 If you have an object oriented design, it can be difficult to initialize all
 of the long-lived objects in your program, especially when they contain complex
@@ -73,9 +68,7 @@ This can result in long chains of constructor calls that need to be changed
 whenever any of the downstream classes change. Additionally, it can be
 difficult to configure these classes in different environments.
 
-
-How does this library handle Dependency Injection?
---------------------------------------------------
+## How does this library handle Dependency Injection?
 
 This library contains a "Registry" module (duolingo_base.util.registry). Once
 a `Registry` instance is created, it can be used to initialize objects and
