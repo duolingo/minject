@@ -70,7 +70,7 @@ difficult to configure these classes in different environments.
 
 ## How does this library handle Dependency Injection?
 
-This library contains a "Registry" module (duolingo_base.util.registry). Once
+This library contains a "Registry" module (duolingo_base.registry). Once
 a `Registry` instance is created, it can be used to initialize objects and
 provide references to dependency objects, while making it easy to configure
 and customize those objects based on the environment. This `Registry` object
@@ -84,7 +84,7 @@ app.registry = registry.initialize()
 
 class PhraseList(object):
     def get_phrase(self, name):
-        return random.choice(['Hello %s', 'Goodbye %s']) % name
+        return random.choice(['Hello {}', 'Goodbye {}']).format(name)
 
 @app.route('/phrase')
 def get_phrase(self):
@@ -96,24 +96,24 @@ The registry will return an initialized instance of PhraseList which you can
 use. The registry will store this instance and return it on future calls.
 
 If you have a class that needs init arguments, you can tell the registry what
-values to use with the annotation system.
+values to use with the `duolingo_base.registry.inject` annotation system.
 
 ```python
-@registry.bind(phrases=['How are you, %s?', 'So long %s'])
+@inject.bind(phrases=['How are you, {}?', 'So long {}'])
 class PhraseList(object):
     def __init__(self, phrases):
         self._phrases = phrases
 
     def get_phrase(self, name):
-        return random.choice(self._phrases) % name
+        return random.choice(self._phrases).format(name)
 ```
 
 One reason this could be useful is if you want to try different phrases in
 testing, you could then create an instance with another value. This really
-becomes powerful when combined with the `registry.reference` function.
+becomes powerful when combined with the `inject.reference` function.
 
 ```python
-@registry.bind(url='http://localhost/my_phrases.txt')
+@inject.bind(url='http://localhost/my_phrases.txt')
 class PhraseLoader(object):
     def __init__(self, url):
         self._url = url
@@ -122,8 +122,8 @@ class PhraseLoader(object):
         ...
 
 
-@registry.bind(loader=registry.reference(PhraseLoader),
-               category='greetings')
+@inject.bind(loader=inject.reference(PhraseLoader),
+             category='greetings')
 class PhraseBuilder(object):
     def __init__(self, loader, category):
         self._loader = loader
@@ -148,9 +148,9 @@ objects, and a `GenericLoader` which will fallback to an api call if the
 object is missing from the cache.
 
 ```python
-PhraseLoader = registry.define(GenericLoader,
-    api=registry.reference(PhraseApi),
-    cache=registry.reference(GenericCache, name="phrase", expire=60),
+PhraseLoader = inject.define(GenericLoader,
+    api=inject.reference(PhraseApi),
+    cache=inject.reference(GenericCache, name="phrase", expire=60),
 )
 
 loader = registry[PhraseLoader]
