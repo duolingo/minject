@@ -1,6 +1,7 @@
 """Collection of annotations to define how a class should be initialized by the registry."""
 
 import itertools
+import os
 from typing import Any, Callable, Sequence, Type, TypeVar, Union  # pylint: disable=unused-import
 
 import six
@@ -239,17 +240,26 @@ def function(func, *args, **kwargs):
 class _RegistryConfig(Deferred[T]):
     """Reference to a value in the configuration object."""
 
-    def __init__(self, key, default=RAISE_KEY_ERROR):
+    def __init__(self, key, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
         # type: (str, Union[T, None, _RaiseKeyError]) -> None
         self._key = key
         self._default = default
+        self._fallback_to_envvar = fallback_to_envvar
 
     def resolve(self, registry_impl):
         # type: (Resolver) -> T
-        if self._default is RAISE_KEY_ERROR:
+        if self._key in registry_impl.config:
+            # first try to resolve the key from the config mapping
             return registry_impl.config[self._key]
+        elif self._fallback_to_envvar and self._key in os.environ:
+            # then, if allowed, try to fallback to an environment variable
+            return os.environ[self._key]
         else:
-            return registry_impl.config.get(self._key, self._default)
+            # finally fallback to default (which may be to raise a key error)
+            if self._default is RAISE_KEY_ERROR:
+                raise KeyError(self._key)
+            else:
+                return self._default
 
     @property
     def key(self):
@@ -268,10 +278,26 @@ class _RegistryConfig(Deferred[T]):
         return "<_RegistryConfig({!r})>".format(self._key)
 
 
-def config(name_, default=RAISE_KEY_ERROR):
+def config(name_, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
     # type: (str, Union[T, None, _RaiseKeyError]) -> _RegistryConfig[T]
-    """Return a value from the registry config object."""
-    return _RegistryConfig(name_, default)
+    """
+    Return a value from the registry config object.
+
+    Parameters:
+        name_:
+            Name of the configuration value to return
+        default:
+            Default value to return when name does not exist, use RAISE_KEY_ERROR to fail.
+        fallback_to_envvar:
+            True to fallback to the same name environment variable if not in config.
+
+    Returns:
+        A deferred value that the registry will resolve to given named config value.
+
+    Raises:
+        KeyError: The given name is not found and no default is provided (RAISE_KEY_ERROR)
+    """
+    return _RegistryConfig(name_, default, fallback_to_envvar)
 
 
 class _RegistrySelf(Deferred[Resolver]):
