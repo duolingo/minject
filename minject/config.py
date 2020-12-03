@@ -21,6 +21,9 @@ class RegistryConfigWrapper(object):
         """
         self._impl = config_dict
 
+    def __contains__(self, key):
+        return key in self._impl
+
     def get(self, key, default=None):
         return self._impl.get(key, default)
 
