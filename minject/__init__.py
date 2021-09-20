@@ -44,5 +44,5 @@ registry['something_i_need'] = make_something()
 something = registry['something_i_need']
 """
 
-from .registry import initialize, Registry
 from . import inject
+from .registry import Registry, initialize
