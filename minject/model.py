@@ -1,5 +1,5 @@
 import abc
-from typing import Generic, Union, Type, TypeVar  # pylint: disable=unused-import
+from typing import Generic, Type, TypeVar, Union  # pylint: disable=unused-import
 
 import six
 

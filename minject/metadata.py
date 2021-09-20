@@ -2,16 +2,8 @@
 
 import inspect
 import itertools
-from typing import (  # pylint: disable=unused-import
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-)
+from typing import Dict  # pylint: disable=unused-import
+from typing import Any, Callable, Generic, List, Optional, Type, TypeVar
 
 import six
 

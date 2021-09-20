@@ -2,28 +2,15 @@
 
 import importlib
 import logging
-from typing import (  # pylint: disable=unused-import
-    Any,
-    cast,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Iterable  # pylint: disable=unused-import
+from typing import Any, Generic, Optional, TypeVar, Union, cast
 
 import six
 
 from .config import RegistryConfigWrapper
-from .metadata import _get_meta, RegistryMetadata
-from .model import (  # pylint: disable=unused-import
-    Deferred,
-    RegistryKey,
-    Resolvable,
-    Resolver,
-    resolve_value,
-)
+from .metadata import RegistryMetadata, _get_meta
+from .model import RegistryKey  # pylint: disable=unused-import
+from .model import Deferred, Resolvable, Resolver, resolve_value
 
 LOG = logging.getLogger(__name__)
 

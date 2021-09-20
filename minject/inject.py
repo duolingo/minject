@@ -6,14 +6,9 @@ from typing import Any, Callable, Sequence, Type, TypeVar, Union  # pylint: disa
 
 import six
 
-from .metadata import _get_meta, _gen_meta, RegistryMetadata
-from .model import (  # pylint: disable=unused-import
-    Deferred,
-    RegistryKey,
-    Resolvable,
-    Resolver,
-    resolve_value,
-)
+from .metadata import RegistryMetadata, _gen_meta, _get_meta
+from .model import RegistryKey  # pylint: disable=unused-import
+from .model import Deferred, Resolvable, Resolver, resolve_value
 
 T = TypeVar("T")
 R = TypeVar("R")

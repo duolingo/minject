@@ -1,8 +1,7 @@
 import unittest
 
-from duolingo_base.util import registry
-
 import tests.util.test_registry_helpers as helpers
+from duolingo_base.util import registry
 
 
 class RegistryTestCase(unittest.TestCase):
