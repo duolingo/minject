@@ -19,10 +19,10 @@ use either the @inject.bind decorator on your class definition, or use
 the inject.define function on an existing class.
 
 @inject.bind(url='http://localhost')
-class MyApi(object):
+class MyApi:
     def __init__(self, url): ...
 
-class ColorClass(object):
+class ColorClass:
     def __init__(self, color): ...
 BlueClass = inject.define(ColorClass, color='blue')
 
@@ -31,7 +31,7 @@ bind or define by using the inject.reference function. This will instruct
 the registry to find the given reference at init-time:
 
 @inject.bind(api=inject.reference(MyApi), path='/index')
-class MyResource(object):
+class MyResource:
     def __init__(self, api, path): ...
 
 Registry will also store objects that are keyed by a simple string. You can

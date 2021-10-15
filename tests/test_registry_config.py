@@ -1,6 +1,9 @@
 import unittest
 
-import mock
+try:
+    import mock
+except ImportError:
+    from unittest import mock
 
 from duolingo_base import registry
 from duolingo_base.registry import inject
@@ -11,7 +14,7 @@ from duolingo_base.registry import inject
     optional=inject.config("OPTIONAL", default=None),
     envvar=inject.config("ENVVAR", fallback_to_envvar=True),
 )
-class Configable(object):
+class Configable:
     def __init__(self, required, optional, envvar):
         self.required = required
         self.optional = optional

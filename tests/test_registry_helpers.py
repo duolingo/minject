@@ -14,21 +14,21 @@ from duolingo_base.registry import inject
 
 
 @inject.bind(name=inject.reference("name"))
-class Named(object):
+class Named:
     def __init__(self, name):
         self.name = name
 
 
-class Tagger(object):
+class Tagger:
     def __init__(self, tag=None):
         self.tag = tag
 
 
-class TestType(object):
+class TestType:
     pass
 
 
-class Foo(object):
+class Foo:
     pass
 
 
@@ -36,26 +36,26 @@ class Bar(Foo):
     pass
 
 
-class Inner(object):
+class Inner:
     def __init__(self, name):
         self.name = name
 
 
 @inject.bind(name="outer", inner=inject.reference(Inner, name="inner"))
-class Outer(object):
+class Outer:
     def __init__(self, name, inner):
         self.name = name
         self.inner = inner
 
 
 @inject.bind(url="http://localhost")
-class Server(object):
+class Server:
     def __init__(self, url):
         self.url = url
 
 
 @inject.bind(server=inject.reference(Server))
-class AbstractResource(object):
+class AbstractResource:
     def __init__(self, server, path):
         self.server = server
         self.path = path
@@ -82,14 +82,14 @@ class MyApiClient(AbstractApiClient):
 
 
 @inject.bind(width="1px", color="black")
-class Border(object):
+class Border:
     def __init__(self, width, style, color):
         self.width = width
         self.style = style
         self.color = color
 
 
-class FakeWorker(object):
+class FakeWorker:
     def __init__(self):
         FakeWorker.instance = self
 
@@ -116,6 +116,6 @@ def nested(arg):
     return arg
 
 
-class Factory(object):
+class Factory:
     def create(self, value):
         return str(value)

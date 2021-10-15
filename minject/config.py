@@ -1,4 +1,4 @@
-class RegistryConfigWrapper(object):
+class RegistryConfigWrapper:
     """Manages the configuration of the registry."""
 
     def __init__(self):
