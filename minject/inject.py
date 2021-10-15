@@ -14,7 +14,7 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 
-class _RaiseKeyError(object):
+class _RaiseKeyError:
     """
     Placeholder to indicate a method should raise a KeyError instead of returning a default.
     DO NOT instantiate this class directly, instead use the `RAISE_KEY_ERROR` singleton.

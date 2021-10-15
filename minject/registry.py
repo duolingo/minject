@@ -17,7 +17,7 @@ LOG = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class _AutoOrNone(object):
+class _AutoOrNone:
     def __nonzero__(self):
         return False
 
