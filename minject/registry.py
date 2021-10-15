@@ -5,12 +5,10 @@ import logging
 from typing import Iterable  # pylint: disable=unused-import
 from typing import Any, Generic, Optional, TypeVar, Union, cast
 
-import six
-
 from .config import RegistryConfigWrapper
 from .metadata import RegistryMetadata, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
-from .model import Deferred, Resolvable, Resolver, resolve_value
+from .model import Resolvable, Resolver, resolve_value
 
 LOG = logging.getLogger(__name__)
 
@@ -247,9 +245,9 @@ class Registry(Resolver):
         Returns:
             True if the object is registered, false otherwise.
         """
-        if isinstance(key, six.string_types):
+        if isinstance(key, str):
             return key in self._by_name
-        elif isinstance(key, six.class_types):
+        elif isinstance(key, type):
             return bool(self._by_iface.get(key))
         elif isinstance(key, RegistryMetadata):
             return bool(self._get_by_metadata(key, False))
@@ -269,9 +267,9 @@ class Registry(Resolver):
         Returns:
             The requested object or default if not found.
         """
-        if isinstance(key, six.string_types):
+        if isinstance(key, str):
             return _unwrap(self._by_name.get(key, default))
-        elif isinstance(key, six.class_types):
+        elif isinstance(key, type):
             meta = _get_meta(key, include_bases=False)
             if meta is not None:
                 # class has registry metadata that can be used to construct it
@@ -321,9 +319,9 @@ class Registry(Resolver):
                 identify the object.
             value: the object to add to the registry
         """
-        if isinstance(key, six.string_types):
+        if isinstance(key, str):
             self.register(value, name=key)
-        elif isinstance(key, six.class_types):
+        elif isinstance(key, type):
             meta = _get_meta(key, include_bases=False)
             if meta is not None:
                 # class has registry metadata that can be used to construct it

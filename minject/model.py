@@ -1,8 +1,6 @@
 import abc
 from typing import Generic, Type, TypeVar, Union  # pylint: disable=unused-import
 
-import six
-
 from .config import RegistryConfigWrapper  # pylint: disable=unused-import
 from .metadata import RegistryMetadata
 
@@ -12,7 +10,7 @@ T = TypeVar("T")
 RegistryKey = Union[Type[T], RegistryMetadata[T]]
 
 
-class Resolver(six.with_metaclass(abc.ABCMeta, object)):
+class Resolver(metaclass=abc.ABCMeta):
     """
     Interface capable of resolving keys and deferred values into instances.
     This interface primarily exists as a way to create a forward reference to Registry.
@@ -23,13 +21,14 @@ class Resolver(six.with_metaclass(abc.ABCMeta, object)):
         # type: (RegistryKey[T]) -> T
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def config(self):
         # type: () -> RegistryConfigWrapper
         pass
 
 
-class Deferred(six.with_metaclass(abc.ABCMeta, Generic[T])):
+class Deferred(Generic[T], metaclass=abc.ABCMeta):
     """
     Deferred reference to a value which can be resolved with the help of a Registry instance.
     """

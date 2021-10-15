@@ -5,8 +5,6 @@ import itertools
 from typing import Dict  # pylint: disable=unused-import
 from typing import Any, Callable, Generic, List, Optional, Type, TypeVar
 
-import six
-
 T = TypeVar("T")
 
 _INJECT_METADATA_ATTR = "_inject_meta"
@@ -102,9 +100,7 @@ class RegistryMetadata(Generic[T]):
 
     def _gen_key(self):
         return tuple(
-            itertools.chain(
-                (self._cls, self._name), (item for item in six.iteritems(self._bindings))
-            )
+            itertools.chain((self._cls, self._name), (item for item in self._bindings.items()))
         )
 
     @property
@@ -124,12 +120,12 @@ class RegistryMetadata(Generic[T]):
 
     def _init_object(self, obj, registry_impl):
         init_kwargs = {}
-        for name_, value in six.iteritems(self._bindings):
+        for name_, value in self._bindings.items():
             init_kwargs[name_] = registry_impl._resolve(value)
 
         config_ = registry_impl.config.get_init_kwargs(self)
         if config_:
-            for name_, value in six.iteritems(config_):
+            for name_, value in config_.items():
                 init_kwargs[name_] = value
 
         self._cls.__init__(obj, **init_kwargs)
@@ -155,7 +151,7 @@ class RegistryMetadata(Generic[T]):
         return "{} {}({})".format(
             repr(self._name) if self._name else "(unnamed)",
             self._cls.__name__,
-            ", ".join(["{}={}".format(*item) for item in six.iteritems(self._bindings)]),
+            ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
         )
 
     def __repr__(self):
