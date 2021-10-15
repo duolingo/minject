@@ -4,8 +4,6 @@ import itertools
 import os
 from typing import Any, Callable, Sequence, Type, TypeVar, Union  # pylint: disable=unused-import
 
-import six
-
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
 from .model import Deferred, Resolvable, Resolver, resolve_value
@@ -125,7 +123,7 @@ class _RegistryReference(Deferred[T]):
         return self._key
 
     def __str__(self):
-        if isinstance(self.key, six.class_types):
+        if isinstance(self.key, type):
             return "ref({})".format(self._key.__name__)
         else:
             return "ref({})".format(self._key)
@@ -160,13 +158,13 @@ class _RegistryFunction(Deferred[T]):
         for arg in self.args:
             args.append(resolve_value(registry_impl, arg))
         kwargs = {}
-        for key, arg in six.iteritems(self.kwargs):
+        for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func(registry_impl)(*args, **kwargs)
 
     def func(self, registry_impl):
         # type: (Resolver) -> Callable[..., T]
-        if isinstance(self._func, six.string_types):
+        if isinstance(self._func, str):
             # TODO(1.0): deprecated, unnecessary
             # if 'func' is a string use the method with that name
             # on the registry object referenced by arg0
@@ -178,7 +176,7 @@ class _RegistryFunction(Deferred[T]):
     @property
     def args(self):
         # type: () -> Sequence
-        if isinstance(self._func, six.string_types):
+        if isinstance(self._func, str):
             # TODO(1.0): deprecated, unnecessary
             # if 'func' is a string the first argument is used to resolve the method
             # instead of being passed as an argument
@@ -201,7 +199,7 @@ class _RegistryFunction(Deferred[T]):
             ", ".join(
                 itertools.chain(
                     (str(arg) for arg in self._args),
-                    ("{}={}".format(*item) for item in six.iteritems(self._kwargs)),
+                    ("{}={}".format(*item) for item in self._kwargs.items()),
                 )
             ),
         )
@@ -222,7 +220,7 @@ def function(func, *args, **kwargs):
         args: positional arguments that should be passed to the function.
         kwargs: keyword arguments that should be passed to the function.
     """
-    if isinstance(func, six.string_types):
+    if isinstance(func, str):
         if not args:
             raise ValueError(
                 "registry.function using a string must have a "

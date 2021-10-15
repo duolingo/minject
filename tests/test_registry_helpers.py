@@ -8,8 +8,6 @@ they will all be in the `__main__` module instead of the expected
 
 import abc
 
-from six import with_metaclass
-
 from duolingo_base.registry import inject
 
 
@@ -67,7 +65,7 @@ class SearchResource(AbstractResource):
 
 
 @inject.bind(url="http://localhost")
-class AbstractApiClient(with_metaclass(abc.ABCMeta)):
+class AbstractApiClient(metaclass=abc.ABCMeta):
     def __init__(self, url):
         self.url = url
 
