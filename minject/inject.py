@@ -2,7 +2,7 @@
 
 import itertools
 import os
-from typing import Any, Callable, Sequence, Type, TypeVar, Union  # pylint: disable=unused-import
+from typing import TYPE_CHECKING, TypeVar
 
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
@@ -10,6 +10,9 @@ from .model import Deferred, Resolvable, Resolver, resolve_value
 
 T = TypeVar("T")
 R = TypeVar("R")
+
+if TYPE_CHECKING:
+    from typing import Any, Callable, Optional, Sequence, Type, Union
 
 
 class _RaiseKeyError:
@@ -234,25 +237,27 @@ class _RegistryConfig(Deferred[T]):
     """Reference to a value in the configuration object."""
 
     def __init__(self, key, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
-        # type: (str, Union[T, None, _RaiseKeyError]) -> None
+        # type: (Optional[str], Union[T, None, _RaiseKeyError], Optional[bool]) -> None
         self._key = key
         self._default = default
         self._fallback_to_envvar = fallback_to_envvar
 
     def resolve(self, registry_impl):
         # type: (Resolver) -> T
+        if self._key is None:
+            return registry_impl.config
         if self._key in registry_impl.config:
             # first try to resolve the key from the config mapping
             return registry_impl.config[self._key]
-        elif self._fallback_to_envvar and self._key in os.environ:
+        if self._fallback_to_envvar and self._key in os.environ:
             # then, if allowed, try to fallback to an environment variable
             return os.environ[self._key]
+
+        # finally fallback to default (which may be to raise a key error)
+        if self._default is RAISE_KEY_ERROR:
+            raise KeyError(self._key)
         else:
-            # finally fallback to default (which may be to raise a key error)
-            if self._default is RAISE_KEY_ERROR:
-                raise KeyError(self._key)
-            else:
-                return self._default
+            return self._default
 
     @property
     def key(self):
@@ -271,14 +276,14 @@ class _RegistryConfig(Deferred[T]):
         return "<_RegistryConfig({!r})>".format(self._key)
 
 
-def config(name_, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
-    # type: (str, Union[T, None, _RaiseKeyError]) -> _RegistryConfig[T]
+def config(name_=None, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
+    # type: (Optional[str], Union[T, None, _RaiseKeyError], Optional[bool]) -> _RegistryConfig[T]
     """
     Return a value from the registry config object.
 
     Parameters:
         name_:
-            Name of the configuration value to return
+            Name of the configuration value to return, if None return config object itself.
         default:
             Default value to return when name does not exist, use RAISE_KEY_ERROR to fail.
         fallback_to_envvar:
