@@ -2,17 +2,14 @@
 
 import itertools
 import os
-from typing import TYPE_CHECKING, TypeVar
+from typing import Callable, Dict, Optional, Sequence, Type, TypeVar, Union, overload
 
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
-from .model import Deferred, Resolvable, Resolver, resolve_value
+from .model import Deferred, DeferredAny, Resolver, resolve_value
 
 T = TypeVar("T")
 R = TypeVar("R")
-
-if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, Sequence, Type, Union
 
 
 class _RaiseKeyError:
@@ -32,12 +29,15 @@ class _RaiseKeyError:
 RAISE_KEY_ERROR = _RaiseKeyError()
 
 
-def bind(_name=None, _start=None, _close=None, **bindings):
-    # type: (str, Callable, Callable, Resolvable) -> Callable
+def bind(
+    _name: Optional[str] = None,
+    _start: Optional[Callable[[T], None]] = None,
+    _close: Optional[Callable[[T], None]] = None,
+    **bindings: DeferredAny,
+) -> Callable[[Type[T]], Type[T]]:
     """Decorator to bind values for the init args of a class."""
 
-    def wrap(cls):
-        # type: (Type[T]) -> Type[T]
+    def wrap(cls: Type[T]) -> Type[T]:
         """Decorate a class with registry bindings."""
         meta = _gen_meta(cls)
         if _name:
@@ -89,8 +89,13 @@ def close_method(cls, method):
     meta._close = method
 
 
-def define(base_class, _name=None, _start=None, _close=None, **bindings):
-    # type: (Type[T], str, Callable[[T], None], Callable[[T], None], Resolvable) -> RegistryMetadata[T]
+def define(
+    base_class: Type[T],
+    _name: Optional[str] = None,
+    _start: Optional[Callable[[T], None]] = None,
+    _close: Optional[Callable[[T], None]] = None,
+    **bindings: DeferredAny,
+) -> RegistryMetadata[T]:
     """Create a new registry key based on a class and optional bindings."""
     meta = _get_meta(base_class)
     if meta:
@@ -109,34 +114,45 @@ class _RegistryReference(Deferred[T]):
     (you should not instantiate this class directly, instead use the
     inject.reference function)"""
 
-    def __init__(self, key):
-        # type: (RegistryKey[T]) -> None
+    def __init__(self, key: "RegistryKey[T]") -> None:
         self._key = key
 
-    def resolve(self, registry_impl):
-        # type: (Resolver) -> T
+    def resolve(self, registry_impl: Resolver) -> T:
         return registry_impl.resolve(self._key)
 
     @property
-    def key(self):
-        # type: () -> RegistryKey[T]
+    def key(self) -> "RegistryKey[T]":
         """The key in the Registry of the object this reference is for.
         This key could be either a class or registry metadata about how
         the object should be constructed."""
         return self._key
 
-    def __str__(self):
+    def __str__(self) -> str:
         if isinstance(self.key, type):
             return "ref({})".format(self._key.__name__)
         else:
             return "ref({})".format(self._key)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<_RegistryReference({!r})>".format(self._key)
 
 
+@overload
+def reference(key: RegistryMetadata[T]) -> _RegistryReference[T]:
+    ...
+
+
+@overload
+def reference(key: str) -> _RegistryReference:
+    ...
+
+
+@overload
+def reference(key: Type[T], **bindings: DeferredAny) -> _RegistryReference[T]:
+    ...
+
+
 def reference(key, **bindings):
-    # type: (Type[T], Resolvable) -> _RegistryReference[T]
     """Return a reference to another registry key."""
     if not bindings:
         return _RegistryReference(key)
@@ -149,14 +165,19 @@ def reference(key, **bindings):
 class _RegistryFunction(Deferred[T]):
     """Function to call to resolve an initialization argument."""
 
-    def __init__(self, func, *args, **kwargs):
-        # type: (Union[str, Callable], Resolvable, Resolvable) -> None
+    def __init__(
+        self,
+        func: Union[str, Callable[..., T]],
+        # TODO: Type with ParamSpec and Concatenate after those are supported by mypy.
+        #    https://github.com/python/mypy/issues/10201
+        *args: DeferredAny,
+        **kwargs: DeferredAny,
+    ):
         self._func = func
         self._args = args or ()
         self._kwargs = kwargs or {}
 
-    def resolve(self, registry_impl):
-        # type: (Resolver) -> T
+    def resolve(self, registry_impl: Resolver) -> T:
         args = []
         for arg in self.args:
             args.append(resolve_value(registry_impl, arg))
@@ -165,8 +186,7 @@ class _RegistryFunction(Deferred[T]):
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func(registry_impl)(*args, **kwargs)
 
-    def func(self, registry_impl):
-        # type: (Resolver) -> Callable[..., T]
+    def func(self, registry_impl: Resolver) -> Callable[..., T]:
         if isinstance(self._func, str):
             # TODO(1.0): deprecated, unnecessary
             # if 'func' is a string use the method with that name
@@ -177,8 +197,7 @@ class _RegistryFunction(Deferred[T]):
             return self._func
 
     @property
-    def args(self):
-        # type: () -> Sequence
+    def args(self) -> Sequence[DeferredAny]:
         if isinstance(self._func, str):
             # TODO(1.0): deprecated, unnecessary
             # if 'func' is a string the first argument is used to resolve the method
@@ -188,15 +207,13 @@ class _RegistryFunction(Deferred[T]):
             return self._args
 
     @property
-    def kwargs(self):
-        # type: () -> dict
+    def kwargs(self) -> Dict[str, DeferredAny]:
         return self._kwargs
 
-    def call(self, registry_impl):
-        # type: (Resolver) -> T
+    def call(self, registry_impl: Resolver) -> T:
         return self.resolve(registry_impl)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{}({})".format(
             self._func.__name__,
             ", ".join(
@@ -207,14 +224,15 @@ class _RegistryFunction(Deferred[T]):
             ),
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<_RegistryFunction({!r}(args={!r}, kwargs={!r}))>".format(
             self._func, self._args, self._kwargs
         )
 
 
-def function(func, *args, **kwargs):
-    # type: (Callable[..., T], Any, Any) -> _RegistryFunction[T]
+def function(
+    func: Union[str, Callable[..., T]], *args: DeferredAny, **kwargs: DeferredAny
+) -> _RegistryFunction[T]:
     """Bind a function to be run at init time.
     Parameters:
         func: the function to call, should return a value to bind (this value
@@ -236,14 +254,17 @@ def function(func, *args, **kwargs):
 class _RegistryConfig(Deferred[T]):
     """Reference to a value in the configuration object."""
 
-    def __init__(self, key, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
-        # type: (Optional[str], Union[T, None, _RaiseKeyError], Optional[bool]) -> None
+    def __init__(
+        self,
+        key: Optional[str],
+        default: Optional[Union[T, _RaiseKeyError]] = RAISE_KEY_ERROR,
+        fallback_to_envvar: bool = False,
+    ) -> None:
         self._key = key
         self._default = default
         self._fallback_to_envvar = fallback_to_envvar
 
-    def resolve(self, registry_impl):
-        # type: (Resolver) -> T
+    def resolve(self, registry_impl: Resolver) -> T:
         if self._key is None:
             return registry_impl.config
         if self._key in registry_impl.config:
@@ -260,24 +281,25 @@ class _RegistryConfig(Deferred[T]):
             return self._default
 
     @property
-    def key(self):
-        # type: () -> str
+    def key(self) -> str:
         return self._key
 
     @property
-    def default(self):
-        # type: () -> Union[T, None, _RaiseKeyError]
+    def default(self) -> Optional[Union[T, _RaiseKeyError]]:
         return self._default
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "config({})".format(self._key)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<_RegistryConfig({!r})>".format(self._key)
 
 
-def config(name_=None, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
-    # type: (Optional[str], Union[T, None, _RaiseKeyError], Optional[bool]) -> _RegistryConfig[T]
+def config(
+    name_: Optional[str] = None,
+    default: Optional[Union[T, _RaiseKeyError]] = RAISE_KEY_ERROR,
+    fallback_to_envvar: bool = False,
+) -> _RegistryConfig[T]:
     """
     Return a value from the registry config object.
 
@@ -301,8 +323,7 @@ def config(name_=None, default=RAISE_KEY_ERROR, fallback_to_envvar=False):
 class _RegistrySelf(Deferred[Resolver]):
     """Reference to the Registry instance itself."""
 
-    def resolve(self, registry_impl):
-        # type: (Resolver) -> Resolver
+    def resolve(self, registry_impl: Resolver) -> Resolver:
         return registry_impl
 
 

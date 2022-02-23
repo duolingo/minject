@@ -1,10 +1,40 @@
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
+
+from typing_extensions import TypedDict
+
+from .types import Kwargs
+
+if TYPE_CHECKING:
+    from .metadata import RegistryMetadata
+
+# Unbound, invariant type variable
+T = TypeVar("T")
+
+
+class RegistrySubConfig(TypedDict, total=False):
+    """Configuration entries that apply to the registry itself."""
+
+    # A sequence of class names or types that should start at registry start time.
+    autostart: Sequence[Union[type, str]]
+    # Names of registry classes mapped to the kwarg dictionary that should be used to initialize
+    # the object of that type.
+    by_class: Mapping[str, Kwargs]
+    # Named registry entries that map to the kwarg dictionary that should be used to initialize
+    # the object for that name.
+    by_name: Mapping[str, Kwargs]
+
+
+class InternalRegistryConfig(TypedDict, total=False):
+    registry: RegistrySubConfig
+
+
 class RegistryConfigWrapper:
     """Manages the configuration of the registry."""
 
     def __init__(self):
         self._impl = {}
 
-    def from_dict(self, config_dict):
+    def from_dict(self, config_dict: Union[Dict[str, Any], InternalRegistryConfig]):
         """Configure the registry from a dictionary.
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator. If the key 'registry'
@@ -21,23 +51,23 @@ class RegistryConfigWrapper:
         """
         self._impl = config_dict
 
-    def __contains__(self, key):
+    def __contains__(self, key: str):
         return key in self._impl
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[T] = None) -> T:
         return self._impl.get(key, default)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         item = self.get(key)
         if item is None:
             raise KeyError(key)
         return item
 
-    def get_init_kwargs(self, meta):
+    def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
         """Get init kwargs configured for a given RegistryMetadata."""
         result = {}
 
-        reg_conf = self._impl.get("registry")
+        reg_conf: Optional[RegistrySubConfig] = self._impl.get("registry")
         if reg_conf:
             by_class = reg_conf.get("by_class")
             if by_class and meta._cls:

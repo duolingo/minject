@@ -1,49 +1,53 @@
 import abc
-from typing import Generic, Type, TypeVar, Union  # pylint: disable=unused-import
+from typing import Type  # pylint: disable=unused-import
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
 
-from .config import RegistryConfigWrapper  # pylint: disable=unused-import
-from .metadata import RegistryMetadata
+from typing_extensions import TypeAlias
+
+from .config import RegistryConfigWrapper
 
 T = TypeVar("T")
 
 
-RegistryKey = Union[Type[T], RegistryMetadata[T]]
+if TYPE_CHECKING:
+    from .metadata import RegistryMetadata
+
+RegistryKey: TypeAlias = "Union[str, Type[T], RegistryMetadata[T]]"
 
 
-class Resolver(metaclass=abc.ABCMeta):
+class Resolver(abc.ABC):
     """
     Interface capable of resolving keys and deferred values into instances.
     This interface primarily exists as a way to create a forward reference to Registry.
     """
 
     @abc.abstractmethod
-    def resolve(self, key):
-        # type: (RegistryKey[T]) -> T
-        pass
+    def resolve(self, key: "RegistryKey[T]") -> T:
+        ...
 
     @property
     @abc.abstractmethod
-    def config(self):
-        # type: () -> RegistryConfigWrapper
-        pass
+    def config(self) -> RegistryConfigWrapper:
+        ...
 
 
-class Deferred(Generic[T], metaclass=abc.ABCMeta):
+class Deferred(abc.ABC, Generic[T]):
     """
     Deferred reference to a value which can be resolved with the help of a Registry instance.
     """
 
     @abc.abstractmethod
-    def resolve(self, registry_impl):
-        # type: (Resolver) -> T
-        pass
+    def resolve(self, registry_impl: Resolver) -> T:
+        ...
 
 
 Resolvable = Union[Deferred[T], T]
+# Union of Deferred and Any is just Any, but want to call out that a Deffered is quite common
+# and has special handling by the registry.
+DeferredAny: TypeAlias = Union[Deferred, Any]
 
 
-def resolve_value(registry_impl, value):
-    # type: (Resolver, Resolvable[T]) -> T
+def resolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
     """
     Resolve a Resolvable value into a concrete value from the given registry.
     If value is an instance of Deferred, it will be resolved using the provided
