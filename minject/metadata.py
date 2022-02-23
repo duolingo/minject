@@ -2,16 +2,30 @@
 
 import inspect
 import itertools
-from typing import Dict  # pylint: disable=unused-import
-from typing import Any, Callable, Generic, List, Optional, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Hashable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
+
+from .model import DeferredAny
+from .types import Kwargs
+
+if TYPE_CHECKING:
+    from .registry import Registry
 
 T = TypeVar("T")
 
 _INJECT_METADATA_ATTR = "_inject_meta"
 
 
-def _get_meta(cls, include_bases=True):
-    # type: (type, bool) -> Optional[RegistryMetadata]
+def _get_meta(cls: Type[T], include_bases: bool = True) -> "RegistryMetadata[T]":
     """
     Get the registry metadata from a class and possibly its base classes.
     Parameters:
@@ -27,8 +41,7 @@ def _get_meta(cls, include_bases=True):
         return cls.__dict__.get(_INJECT_METADATA_ATTR)
 
 
-def _gen_meta(cls):
-    # type: (type) -> RegistryMetadata
+def _gen_meta(cls: Type[T]) -> "RegistryMetadata[T]":
     """
     Get the registry metadata from a class, generating it if missing.
     If the provided class has base classes with metadata defined but not its own, the new metadata
@@ -40,7 +53,7 @@ def _gen_meta(cls):
         Registry metadata describing the given cls if found, otherwise a new metadata instance.
     """
     # load metadata from the class definition
-    meta = getattr(cls, _INJECT_METADATA_ATTR, None)
+    meta: Optional[RegistryMetadata] = getattr(cls, _INJECT_METADATA_ATTR, None)
     if meta is None or _INJECT_METADATA_ATTR not in cls.__dict__:
         # meta does not exist or is from parent class
         if meta:
@@ -58,12 +71,12 @@ class RegistryMetadata(Generic[T]):
 
     def __init__(
         self,
-        cls,  # type: Type[T]
-        name=None,  # type: Optional[str]  # pylint: disable=redefined-outer-name
-        start=None,  # type: Optional[Callable[[T], None]]
-        close=None,  # type: Optional[Callable[[T], None]]
-        bindings=None,  # type: Optional[Dict[str, Any]]
-        key=None,  # type: Optional[Any]
+        cls: Type[T],
+        name: Optional[str] = None,  # pylint: disable=redefined-outer-name
+        start: Optional[Callable[[T], None]] = None,
+        close: Optional[Callable[[T], None]] = None,
+        bindings: Optional[Kwargs] = None,
+        key: Optional[Hashable] = None,
     ):
         self._cls = cls
         self._bindings = bindings or {}
@@ -77,21 +90,21 @@ class RegistryMetadata(Generic[T]):
         self._key = key
 
     @property
-    def name(self):  # type: () -> Optional[str]
+    def name(self) -> Optional[str]:
         """Get the name this object is stored as in the registry."""
         return self._name
 
     @name.setter
-    def name(self, name_):  # type: (str) -> None
+    def name(self, name_: str) -> None:
         self._name = name_
 
     @property
-    def interfaces(self):  # type: () -> List[type]
+    def interfaces(self) -> Sequence[Type]:
         """Get the interfaces that this object provides."""
         return self._interfaces
 
     @property
-    def key(self):  # type: () -> Any
+    def key(self) -> Hashable:
         """The unique identifier used by this registry object.
         By default this is a combination of class and bindings."""
         if self._key is None:
@@ -104,21 +117,21 @@ class RegistryMetadata(Generic[T]):
         )
 
     @property
-    def bindings(self):  # type: () -> dict
+    def bindings(self) -> Kwargs:
         """Get the 'bindings' (init args) for this registry object."""
         return self._bindings
 
-    def update_bindings(self, **bindings):  # type: (Any) -> None
+    def update_bindings(self, **bindings: DeferredAny) -> None:
         """Upate the 'bindings' (init args) for this registry object.
         NOTE: DO NOT change the bindings after this metadata has been
         added to the registry, it will cause undefined behavior."""
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
 
-    def _new_object(self):
+    def _new_object(self) -> T:
         return self._cls.__new__(self._cls)
 
-    def _init_object(self, obj, registry_impl):
+    def _init_object(self, obj: T, registry_impl: "Registry") -> None:
         init_kwargs = {}
         for name_, value in self._bindings.items():
             init_kwargs[name_] = registry_impl._resolve(value)
@@ -130,31 +143,31 @@ class RegistryMetadata(Generic[T]):
 
         self._cls.__init__(obj, **init_kwargs)
 
-    def _start_object(self, obj):
+    def _start_object(self, obj: T) -> None:
         if self._start:
             self._start(obj)
 
-    def _close_object(self, obj):
+    def _close_object(self, obj: T) -> None:
         if self._close:
             self._close(obj)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, RegistryMetadata):
             return self.key == other.key
         else:
             return NotImplemented
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.key)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{} {}({})".format(
             repr(self._name) if self._name else "(unnamed)",
             self._cls.__name__,
             ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<RegistryMetadata {} {}({})>".format(
             repr(self._name) if self._name else "(unnamed)", self._cls.__name__, self._bindings
         )

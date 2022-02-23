@@ -46,3 +46,9 @@ something = registry['something_i_need']
 
 from . import inject
 from .registry import Registry, initialize
+
+__all__ = [
+    "inject",
+    "initialize",
+    "Registry",
+]

@@ -2,10 +2,9 @@
 
 import importlib
 import logging
-from typing import Iterable  # pylint: disable=unused-import
-from typing import Any, Generic, Optional, TypeVar, Union, cast
+from typing import Dict, Generic, Hashable, Iterable, List, Optional, TypeVar, Union, cast
 
-from .config import RegistryConfigWrapper
+from .config import RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
 from .model import Resolvable, Resolver, resolve_value
@@ -26,20 +25,17 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize():
-    # type: () -> Registry
+def initialize() -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
     return Registry()
 
 
-def _unwrap(wrapper):
-    # type: (Optional[RegistryWrapper[T]]) -> Optional[T]
+def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
     return wrapper.obj if wrapper else None
 
 
-def _resolve_import(value):
-    # type: (str) -> Any
+def _resolve_import(value: str) -> Hashable:
     module_name, var_name = value.rsplit(".", 1)
     module = importlib.import_module(module_name)
     return getattr(module, var_name)
@@ -48,19 +44,16 @@ def _resolve_import(value):
 class RegistryWrapper(Generic[T]):
     """Simple wrapper around registered objects for tracking."""
 
-    def __init__(self, obj, _meta=None):
-        # type: (T, Optional[RegistryMetadata[T]]) -> None
+    def __init__(self, obj: T, _meta: Optional[RegistryMetadata[T]] = None) -> None:
         self.obj = obj
         self._meta = _meta
 
-    def start(self):
-        # type: () -> None
+    def start(self) -> None:
         if not getattr(self, "_started", False) and self._meta:
             self._meta._start_object(self.obj)
         self._started = True
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         if getattr(self, "_started", False):
             if not getattr(self, "_closed", False) and self._meta:
                 self._meta._close_object(self.obj)
@@ -71,37 +64,32 @@ class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
     def __init__(self):
-        self._objects = []  # List[RegistryWrapper]
-        self._by_meta = {}  # Dict[RegistryMetadata, RegistryWrapper]
-        self._by_name = {}  # Dict[str, RegistryWrapper]
-        self._by_iface = {}  # Dict[type, RegistryWrapper]
+        self._objects: List[RegistryWrapper] = []
+        self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
+        self._by_name: Dict[str, RegistryWrapper] = {}
+        self._by_iface: Dict[type, RegistryWrapper] = {}
 
         self._config = RegistryConfigWrapper()
 
     @property
-    def config(self):
-        # type: () -> RegistryConfigWrapper
+    def config(self) -> RegistryConfigWrapper:
         return self._config
 
-    def resolve(self, key):
-        # type: (RegistryKey[T]) -> T
+    def resolve(self, key: "RegistryKey[T]") -> T:
         return self[key]
 
-    def _resolve(self, value):
-        # type: (Resolvable[T]) -> T
+    def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
 
-    def _autostart_candidates(self):
-        # type: () -> Iterable[Any]
-        registry_config = self.config.get("registry")
+    def _autostart_candidates(self) -> Iterable[Hashable]:
+        registry_config: Optional[RegistrySubConfig] = self.config.get("registry")
         if registry_config:
             autostart = registry_config.get("autostart")
             if autostart:
                 return (_resolve_import(value) for value in autostart)
         return ()
 
-    def start(self):
-        # type: () -> None
+    def start(self) -> None:
         """
         Call start if defined on all objects contained in the registry.
         This includes any classes designated as autostart in config.
@@ -115,16 +103,16 @@ class Registry(Resolver):
                 # call the object's start method, if defined
                 wrapper.start()
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         """Close all objects contained in the registry."""
         for wrapper in list(reversed(self._objects)):
             if wrapper._meta is not None:
                 # call the object's close method, if defined
                 wrapper.close()
 
-    def register(self, obj, name=None, interfaces=None):
-        # type: (T, str, Iterable[type]) -> None
+    def register(
+        self, obj: T, name: Optional[str] = None, interfaces: Iterable[type] = None
+    ) -> None:
         """Register a new object for discovery.
 
         Parameters:
@@ -149,8 +137,9 @@ class Registry(Resolver):
                 obj_list = self._by_iface.setdefault(iface, [])
                 obj_list.append(wrapper)
 
-    def _set_by_metadata(self, meta, obj, _global=True):
-        # type: (RegistryMetadata[T], T, bool) -> RegistryWrapper[T]
+    def _set_by_metadata(
+        self, meta: RegistryMetadata[T], obj: T, _global: bool = True
+    ) -> RegistryWrapper[T]:
         wrapper = RegistryWrapper(obj, meta)
 
         if _global:
@@ -166,8 +155,9 @@ class Registry(Resolver):
 
         return wrapper
 
-    def _remove_by_metadata(self, meta, wrapper, _global=True):
-        # type: (RegistryMetadata[T], RegistryWrapper[T], bool) -> None
+    def _remove_by_metadata(
+        self, meta: RegistryMetadata[T], wrapper: RegistryWrapper[T], _global: bool = True
+    ) -> None:
         if _global:
             self._objects.remove(wrapper)
         if meta.name:
@@ -180,8 +170,7 @@ class Registry(Resolver):
                 if obj_list:
                     obj_list.remove(wrapper)
 
-    def _register_by_metadata(self, meta):
-        # type: (RegistryMetadata[T]) -> RegistryWrapper[T]
+    def _register_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
         LOG.debug("registering %s", meta)
 
         # allocate the object (but don't initialize yet)
@@ -206,8 +195,9 @@ class Registry(Resolver):
 
         return wrapper
 
-    def _get_by_metadata(self, meta, default=AUTO_OR_NONE):
-        # type: (RegistryMetadata[T], Union[T, _AutoOrNone, None]) -> Optional[RegistryWrapper[T]]
+    def _get_by_metadata(
+        self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
+    ) -> Optional[RegistryWrapper[T]]:
         """
         Get a registered object by metadata.
         Parameters:
@@ -230,10 +220,10 @@ class Registry(Resolver):
         else:
             return None
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._objects)
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         """Check if an object is contained in the registry.
         Note that this method returns True if the object has already been
         registered. It is possible that the key provides enough information
@@ -254,8 +244,9 @@ class Registry(Resolver):
         else:
             raise KeyError("invalid key for Registry: {!r}".format(key))
 
-    def get(self, key, default=None):
-        # type: (RegistryKey[T], Union[T, None, _AutoOrNone]) -> Optional[T]
+    def get(
+        self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
+    ) -> Optional[T]:
         """Get an object from the registry by a key.
 
         Parameters:
@@ -294,8 +285,7 @@ class Registry(Resolver):
         else:
             raise KeyError("invalid key for Registry: {!r}".format(key))
 
-    def __getitem__(self, key):
-        # type: (RegistryKey[T]) -> T
+    def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.
         Parameters:
             key: a string, type, or RegistryDefinition that will be used
@@ -310,8 +300,7 @@ class Registry(Resolver):
             raise KeyError(key)
         return obj
 
-    def __setitem__(self, key, value):
-        # type: (RegistryKey[T], T) -> None
+    def __setitem__(self, key: "RegistryKey[T]", value: T) -> None:
         """Add an object to the registry by a key.
 
         Parameters:

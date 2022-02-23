@@ -220,6 +220,51 @@ class RegistryTestCase(unittest.TestCase):
         func_logic = registry.function(helpers.logic, registry.self_tag)
         self.assertEqual(self.registry, func_logic.call(self.registry))
 
+    def test_inherited_start_stop(self):
+        class Base:
+            def __init__(self):
+                self.started: bool = False
+                self.closed: bool = False
+
+        def start(base: Base):
+            base.started = True
+
+        def close(base: Base):
+            base.closed = True
+
+        @registry.bind(_start=start, _close=close)
+        class Sub(Base):
+            ...
+
+        # Registry starts on initial lookup as part of the initiation process
+        instance = self.registry[Sub]
+        assert instance.started == True
+        assert instance.closed == False
+        # Close the registry
+        self.registry.close()
+        assert instance.started == True
+        assert instance.closed == True
+
+    def test_multiple_deferred_bindings(self):
+        @registry.bind()
+        class Foo:
+            def foo(self):
+                return "foo"
+
+        @registry.bind()
+        class Bar:
+            def bar(self):
+                return "bar"
+
+        @registry.bind(foo=registry.reference(Foo), bar=registry.reference(Bar))
+        class MultipleBindings:
+            def __init__(self, foo: Foo, bar: Bar):
+                self.foo = foo
+                self.bar = bar
+
+        assert self.registry[MultipleBindings].foo.foo() == "foo"
+        assert self.registry[MultipleBindings].bar.bar() == "bar"
+
 
 if __name__ == "__main__":
     unittest.main()
