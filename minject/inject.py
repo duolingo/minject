@@ -2,7 +2,9 @@
 
 import itertools
 import os
-from typing import Callable, Dict, Optional, Sequence, Type, TypeVar, Union, overload
+from typing import Any, Callable, Dict, Optional, Sequence, Type, TypeVar, Union, cast, overload
+
+from typing_extensions import TypeGuard
 
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
@@ -28,13 +30,31 @@ class _RaiseKeyError:
 # Placeholder to indicate a method should raise a KeyError instead of returning a default.
 RAISE_KEY_ERROR = _RaiseKeyError()
 
+# Overload for when we _cannot_ infer what `T` will be from a call to bind
+@overload
+def bind(
+    _name: Optional[str] = None, _start: None = None, _close: None = None, **bindings: DeferredAny
+) -> Callable[[Type[T]], Type[T]]:
+    ...
 
+
+# Overload for when we _can_ infer what `T` will be from a call to bind.
+@overload
 def bind(
     _name: Optional[str] = None,
     _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> Callable[[Type[T]], Type[T]]:
+    ...
+
+
+def bind(
+    _name=None,
+    _start=None,
+    _close=None,
+    **bindings,
+):
     """Decorator to bind values for the init args of a class."""
 
     def wrap(cls: Type[T]) -> Type[T]:
@@ -109,6 +129,11 @@ def define(
     return meta
 
 
+def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
+    """A typeguard function to see if a RegistryKey[T] is-a Type[T]"""
+    return isinstance(key, type)
+
+
 class _RegistryReference(Deferred[T]):
     """Reference to an object in the registry to be loaded later.
     (you should not instantiate this class directly, instead use the
@@ -128,7 +153,7 @@ class _RegistryReference(Deferred[T]):
         return self._key
 
     def __str__(self) -> str:
-        if isinstance(self.key, type):
+        if _is_type(self._key):
             return "ref({})".format(self._key.__name__)
         else:
             return "ref({})".format(self._key)
@@ -215,7 +240,7 @@ class _RegistryFunction(Deferred[T]):
 
     def __str__(self) -> str:
         return "{}({})".format(
-            self._func.__name__,
+            self._func if isinstance(self._func, str) else self._func.__name__,
             ", ".join(
                 itertools.chain(
                     (str(arg) for arg in self._args),
@@ -251,13 +276,17 @@ def function(
     return _RegistryFunction(func, *args, **kwargs)
 
 
+def _is_key_error(obj: Any) -> TypeGuard[_RaiseKeyError]:
+    return obj is RAISE_KEY_ERROR
+
+
 class _RegistryConfig(Deferred[T]):
     """Reference to a value in the configuration object."""
 
     def __init__(
         self,
         key: Optional[str],
-        default: Optional[Union[T, _RaiseKeyError]] = RAISE_KEY_ERROR,
+        default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR,
         fallback_to_envvar: bool = False,
     ) -> None:
         self._key = key
@@ -266,22 +295,22 @@ class _RegistryConfig(Deferred[T]):
 
     def resolve(self, registry_impl: Resolver) -> T:
         if self._key is None:
-            return registry_impl.config
+            return cast(T, registry_impl.config)  # If _key is None then T is RegistryConfigWrapper
         if self._key in registry_impl.config:
             # first try to resolve the key from the config mapping
             return registry_impl.config[self._key]
         if self._fallback_to_envvar and self._key in os.environ:
             # then, if allowed, try to fallback to an environment variable
-            return os.environ[self._key]
+            return cast(T, os.environ[self._key])
 
         # finally fallback to default (which may be to raise a key error)
-        if self._default is RAISE_KEY_ERROR:
+        if _is_key_error(self._default):
             raise KeyError(self._key)
         else:
-            return self._default
+            return cast(T, self._default)
 
     @property
-    def key(self) -> str:
+    def key(self) -> Optional[str]:
         return self._key
 
     @property
@@ -297,7 +326,7 @@ class _RegistryConfig(Deferred[T]):
 
 def config(
     name_: Optional[str] = None,
-    default: Optional[Union[T, _RaiseKeyError]] = RAISE_KEY_ERROR,
+    default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR,
     fallback_to_envvar: bool = False,
 ) -> _RegistryConfig[T]:
     """

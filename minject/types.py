@@ -1,3 +1,3 @@
-from typing import Any, Mapping
+from typing import Any, Dict
 
-Kwargs = Mapping[str, Any]
+Kwargs = Dict[str, Any]

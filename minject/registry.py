@@ -2,12 +2,11 @@
 
 import importlib
 import logging
-from typing import Dict, Generic, Hashable, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from .config import RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta
-from .model import RegistryKey  # pylint: disable=unused-import
-from .model import Resolvable, Resolver, resolve_value
+from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
 LOG = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
     return wrapper.obj if wrapper else None
 
 
-def _resolve_import(value: str) -> Hashable:
+def _resolve_import(value: str) -> RegistryKey:
     module_name, var_name = value.rsplit(".", 1)
     module = importlib.import_module(module_name)
     return getattr(module, var_name)
@@ -67,7 +66,7 @@ class Registry(Resolver):
         self._objects: List[RegistryWrapper] = []
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
-        self._by_iface: Dict[type, RegistryWrapper] = {}
+        self._by_iface: Dict[type, List[RegistryWrapper]] = {}
 
         self._config = RegistryConfigWrapper()
 
@@ -81,7 +80,7 @@ class Registry(Resolver):
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
 
-    def _autostart_candidates(self) -> Iterable[Hashable]:
+    def _autostart_candidates(self) -> Iterable[RegistryKey]:
         registry_config: Optional[RegistrySubConfig] = self.config.get("registry")
         if registry_config:
             autostart = registry_config.get("autostart")
@@ -259,7 +258,7 @@ class Registry(Resolver):
             The requested object or default if not found.
         """
         if isinstance(key, str):
-            return _unwrap(self._by_name.get(key, default))
+            return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))))
         elif isinstance(key, type):
             meta = _get_meta(key, include_bases=False)
             if meta is not None:
