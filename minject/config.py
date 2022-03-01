@@ -14,8 +14,8 @@ T = TypeVar("T")
 class RegistrySubConfig(TypedDict, total=False):
     """Configuration entries that apply to the registry itself."""
 
-    # A sequence of class names or types that should start at registry start time.
-    autostart: Sequence[Union[type, str]]
+    # A sequence of class names that should start at registry start time.
+    autostart: Sequence[str]
     # Names of registry classes mapped to the kwarg dictionary that should be used to initialize
     # the object of that type.
     by_class: Mapping[str, Kwargs]
@@ -58,14 +58,14 @@ class RegistryConfigWrapper:
         return self._impl.get(key, default)
 
     def __getitem__(self, key: str) -> Any:
-        item = self.get(key)
+        item: Optional[Any] = self.get(key)
         if item is None:
             raise KeyError(key)
         return item
 
     def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
         """Get init kwargs configured for a given RegistryMetadata."""
-        result = {}
+        result: Dict[str, Any] = {}
 
         reg_conf: Optional[RegistrySubConfig] = self._impl.get("registry")
         if reg_conf:

@@ -64,7 +64,11 @@ class SearchResource(AbstractResource):
     pass
 
 
-@inject.bind(url="http://localhost")
+# Note: mypy enforces that the generic variable passed to a Type[T] be a concrete class
+# whether it should do this is under debate, but the issue hasn't been fixed in four years so
+# we just ignore it for now
+# See: https://github.com/python/mypy/issues/5374
+@inject.bind(url="http://localhost")  # type: ignore
 class AbstractApiClient(metaclass=abc.ABCMeta):
     def __init__(self, url):
         self.url = url

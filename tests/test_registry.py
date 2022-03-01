@@ -1,6 +1,7 @@
 import unittest
 
 import tests.util.test_registry_helpers as helpers
+from duolingo_base.registry.inject import _RegistryFunction
 from duolingo_base.util import registry
 
 
@@ -8,7 +9,7 @@ class RegistryTestCase(unittest.TestCase):
     def setUp(self):
         self.registry = registry.initialize()
 
-    def test_by_name(self):
+    def test_by_name(self) -> None:
         obj_a = object()
         obj_b = object()
 
@@ -28,7 +29,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual(obj_a, self.registry["a"])
         self.assertEqual(obj_b, self.registry["b"])
 
-    def test_by_definition(self):
+    def test_by_definition(self) -> None:
         self.assertNotIn(helpers.TestType, self.registry)
         self.assertIsNone(self.registry.get(helpers.TestType))
 
@@ -36,7 +37,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertIsInstance(test_obj, helpers.TestType)
         self.assertIs(test_obj, self.registry.get(helpers.TestType))
 
-    def test_bindings(self):
+    def test_bindings(self) -> None:
         self.registry["name"] = "my_name"
 
         self.assertNotIn(helpers.Named, self.registry)
@@ -48,14 +49,14 @@ class RegistryTestCase(unittest.TestCase):
 
         self.assertEqual("my_name", named_obj.name)
 
-    def test_inheritance(self):
+    def test_inheritance(self) -> None:
         bar = self.registry[helpers.Bar]
 
         self.assertIs(bar, self.registry[helpers.Bar])
         self.assertIs(bar, self.registry[helpers.Foo])
         self.assertIsNone(self.registry.get(object))
 
-    def test_different_bindings(self):
+    def test_different_bindings(self) -> None:
         TaggerA = registry.define(helpers.Tagger, tag="a")
         TaggerB = registry.define(helpers.Tagger, tag="b")
         TaggerNone = registry.define(helpers.Tagger)
@@ -82,7 +83,7 @@ class RegistryTestCase(unittest.TestCase):
 
         self.assertIs(aref, self.registry[TaggerAref])
 
-    def test_nested_bind(self):
+    def test_nested_bind(self) -> None:
         outer = self.registry[helpers.Outer]
 
         self.assertEqual("outer", outer.name)
@@ -92,7 +93,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertIs(outer, self.registry[helpers.Outer])
         self.assertIs(outer.inner, self.registry[helpers.Inner])
 
-    def test_bind_inherit(self):
+    def test_bind_inherit(self) -> None:
         IndexResource = registry.define(helpers.AbstractResource, path="/index.html")
         index = self.registry[IndexResource]
 
@@ -142,12 +143,12 @@ class RegistryTestCase(unittest.TestCase):
         self.assertIsNot(index, duo)
         self.assertIsNot(index.server, duo.server)
 
-    def test_nonbound_abstract(self):
+    def test_nonbound_abstract(self) -> None:
         client = self.registry[helpers.MyApiClient]
 
         self.assertEqual("http://localhost/myapi", client.get())
 
-    def test_config(self):
+    def test_config(self) -> None:
         RedBorder = registry.define(helpers.Border, color="red")
         RedBorder.name = "border_red"
 
@@ -180,7 +181,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual("red", border_red.color)
         self.assertEqual("black", border_dotted.color)
 
-    def test_func(self):
+    def test_func(self) -> None:
         func = registry.function(helpers.passthrough)
         self.assertEqual(((), {}), func.call(self.registry))
 
@@ -200,27 +201,29 @@ class RegistryTestCase(unittest.TestCase):
         func_ref = registry.function(helpers.passthrough, other=registry.reference(other))
         self.assertEqual(((), {"other": self.registry[other]}), func_ref.call(self.registry))
 
-        func_factory = registry.function("create", registry.reference(helpers.Factory), 1)
+        func_factory: _RegistryFunction[str] = registry.function(
+            "create", registry.reference(helpers.Factory), 1
+        )
         self.assertEqual("1", func_factory.call(self.registry))
 
-    def test_autostart(self):
+    def test_autostart(self) -> None:
         self.registry.config.from_dict(
             {"registry": {"autostart": ["tests.util.test_registry_helpers.FakeWorker"]}}
         )
 
         self.registry.start()
         self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
-        self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))
-        self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
+        self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
         self.registry.close()
-        self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
-    def test_self(self):
+    def test_self(self) -> None:
         func_logic = registry.function(helpers.logic, registry.self_tag)
         self.assertEqual(self.registry, func_logic.call(self.registry))
 
-    def test_inherited_start_stop(self):
+    def test_inherited_start_stop(self) -> None:
         class Base:
             def __init__(self):
                 self.started: bool = False
@@ -245,7 +248,7 @@ class RegistryTestCase(unittest.TestCase):
         assert instance.started == True
         assert instance.closed == True
 
-    def test_multiple_deferred_bindings(self):
+    def test_multiple_deferred_bindings(self) -> None:
         @registry.bind()
         class Foo:
             def foo(self):

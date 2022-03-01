@@ -25,7 +25,7 @@ T = TypeVar("T")
 _INJECT_METADATA_ATTR = "_inject_meta"
 
 
-def _get_meta(cls: Type[T], include_bases: bool = True) -> "RegistryMetadata[T]":
+def _get_meta(cls: Type[T], include_bases: bool = True) -> "Optional[RegistryMetadata[T]]":
     """
     Get the registry metadata from a class and possibly its base classes.
     Parameters:

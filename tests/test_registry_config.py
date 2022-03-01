@@ -1,12 +1,10 @@
 import unittest
-
-try:
-    import mock
-except ImportError:
-    from unittest import mock
+from typing import Optional
+from unittest import mock
 
 from duolingo_base import registry
 from duolingo_base.registry import inject
+from duolingo_base.registry.inject import _RegistryConfig
 
 
 @inject.bind(
@@ -25,7 +23,7 @@ class RegistryConfigTestCase(unittest.TestCase):
     def setUp(self):
         self.registry = registry.initialize()
 
-    def test_config_simple(self):
+    def test_config_simple(self) -> None:
         self.registry.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2, "ENVVAR": 3})
 
         config = self.registry[Configable]
@@ -33,13 +31,13 @@ class RegistryConfigTestCase(unittest.TestCase):
         self.assertEqual(2, config.optional)
         self.assertEqual(3, config.envvar)
 
-    def test_config_required(self):
+    def test_config_required(self) -> None:
         self.registry.config.from_dict({"OPTIONAL": 2, "ENVVAR": 3})
 
         with (self.assertRaises(KeyError)):
             _ = self.registry[Configable]
 
-    def test_config_optional(self):
+    def test_config_optional(self) -> None:
         self.registry.config.from_dict({"REQUIRED": 1, "ENVVAR": 3})
 
         config = self.registry[Configable]
@@ -47,7 +45,7 @@ class RegistryConfigTestCase(unittest.TestCase):
         self.assertIsNone(config.optional)
         self.assertEqual(3, config.envvar)
 
-    def test_config_envvar(self):
+    def test_config_envvar(self) -> None:
         self.registry.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2})
 
         with mock.patch.dict("os.environ", {"ENVVAR": "value"}):
@@ -56,11 +54,18 @@ class RegistryConfigTestCase(unittest.TestCase):
             self.assertEqual(2, config.optional)
             self.assertEqual("value", config.envvar)
 
-    def test_config_envvar_missing(self):
+    def test_config_envvar_missing(self) -> None:
         self.registry.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2})
 
         with (self.assertRaises(KeyError)):
             _ = self.registry[Configable]
+
+    def test_config_default_typing(self) -> None:
+        self.registry.config.from_dict({"EXISTS": "exists"})
+        temp: _RegistryConfig[Optional[str]] = inject.config("DNE", None)
+        assert temp.resolve(self.registry) is None
+        temp = inject.config("EXISTS", None)
+        assert temp.resolve(self.registry) == "exists"
 
 
 if __name__ == "__main__":
