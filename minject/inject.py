@@ -9,6 +9,7 @@ from typing_extensions import TypeGuard
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import RegistryKey  # pylint: disable=unused-import
 from .model import Deferred, DeferredAny, Resolver, resolve_value
+from .types import _MinimalMappingProtocol
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -322,6 +323,64 @@ class _RegistryConfig(Deferred[T]):
 
     def __repr__(self) -> str:
         return "<_RegistryConfig({!r})>".format(self._key)
+
+
+class _RegistryNestedConfig(Deferred[T]):
+    def __init__(
+        self, keys: Union[Sequence[str], str], default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR
+    ) -> None:
+        """
+        Allows simpler injection of nested config values.
+        This is similar to the `Config.get_nested` call, but allows for lazy loading of the config
+        values (as is done with other injected values by the registry).
+
+        See Also:
+            The `nested_config` method's documentation for more information on parameters, etc.
+        """
+        self._keys: Sequence[str] = keys.split(".") if isinstance(keys, str) else keys
+        self._default = default
+
+    def resolve(self, registry_impl: Resolver) -> T:
+        sub = registry_impl.config
+        for key in self._keys:
+            if isinstance(sub, _MinimalMappingProtocol) and key in sub:
+                sub = sub[key]
+            elif isinstance(self._default, _RaiseKeyError):
+                raise KeyError(self._keys)
+            else:
+                return self._default
+        return cast(T, sub)
+
+
+def nested_config(
+    keys: Union[Sequence[str], str], default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR
+) -> _RegistryNestedConfig[T]:
+    """
+    Returns a reference to a nested registry config value.
+
+    The difference betewen using this and an immediate
+    `inject.bind(param=Config.load_config().get_nested(keys))` is that the config value will be
+    loaded only when it is needed - like the rest of the registry references.
+    Additionally, you have the guarantee that the config value will come from the same config the
+    registry is using.
+
+    Parameters:
+        keys: This can be a sequence of names like `Config.get_nested`, or it can be a dotted name
+            like "my.nested.config.value". Such strings are split on the "." character.  If you
+            have a name that contains a period you will need to pass in keys as a pre-split sequence
+            of names.
+        default: The default to return if the key is not set/does not exist.
+            If it is the special value `RAISE_KEY_ERROR` then no default is returned and a key error
+            is raised. Defaults to RAISE_KEY_ERROR.
+
+    Returns:
+        A reference to the config value that will be lazy-loaded.
+
+    See Also:
+        duolingo_base.config.Config.get_nested: The non-registry, non-lazy-loaded equivalent of
+            this method
+    """
+    return _RegistryNestedConfig(keys, default)
 
 
 def config(
