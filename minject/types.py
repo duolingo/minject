@@ -13,7 +13,7 @@ V_co = TypeVar("V_co", covariant=True)
 @runtime_checkable
 class _MinimalMappingProtocol(Protocol[K_contra, V_co]):
     """
-    Defines the minimum methods needed for the dict-like objects acceptedable to RegistryNestedConfig.
+    Defines the minimum methods needed for the dict-like objects acceptable to RegistryNestedConfig.
     """
 
     def __getitem__(self, key: K_contra) -> V_co:
