@@ -110,7 +110,7 @@ class Registry(Resolver):
                 wrapper.close()
 
     def register(
-        self, obj: T, name: Optional[str] = None, interfaces: Iterable[type] = None
+        self, obj: T, name: Optional[str] = None, interfaces: Optional[Iterable[type]] = None
     ) -> None:
         """Register a new object for discovery.
 
