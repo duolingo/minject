@@ -7,12 +7,13 @@ from typing_extensions import TypeAlias
 from .config import RegistryConfigWrapper
 
 T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 
 
 if TYPE_CHECKING:
     from .metadata import RegistryMetadata
 
-RegistryKey: TypeAlias = "Union[str, Type[T], RegistryMetadata[T]]"
+RegistryKey: TypeAlias = "Union[str, Type[T_co], RegistryMetadata[T_co]]"
 
 
 class Resolver(abc.ABC):
@@ -31,17 +32,17 @@ class Resolver(abc.ABC):
         ...
 
 
-class Deferred(abc.ABC, Generic[T]):
+class Deferred(abc.ABC, Generic[T_co]):
     """
     Deferred reference to a value which can be resolved with the help of a Registry instance.
     """
 
     @abc.abstractmethod
-    def resolve(self, registry_impl: Resolver) -> T:
+    def resolve(self, registry_impl: Resolver) -> T_co:
         ...
 
 
-Resolvable = Union[Deferred[T], T]
+Resolvable = Union[Deferred[T_co], T_co]
 # Union of Deferred and Any is just Any, but want to call out that a Deffered is quite common
 # and has special handling by the registry.
 DeferredAny: TypeAlias = Union[Deferred, Any]

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from .registry import Registry
 
 T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 
 _INJECT_METADATA_ATTR = "_inject_meta"
 
@@ -66,15 +67,15 @@ def _gen_meta(cls: Type[T]) -> "RegistryMetadata[T]":
     return meta
 
 
-class RegistryMetadata(Generic[T]):
+class RegistryMetadata(Generic[T_co]):
     """Metadata for a registry key."""
 
     def __init__(
         self,
-        cls: Type[T],
+        cls: Type[T_co],
         name: Optional[str] = None,  # pylint: disable=redefined-outer-name
-        start: Optional[Callable[[T], None]] = None,
-        close: Optional[Callable[[T], None]] = None,
+        start: Optional[Callable[[T_co], None]] = None,
+        close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
         key: Optional[Hashable] = None,
     ):
@@ -128,10 +129,17 @@ class RegistryMetadata(Generic[T]):
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
 
-    def _new_object(self) -> T:
+    def _new_object(self) -> T_co:
         return self._cls.__new__(self._cls)
 
-    def _init_object(self, obj: T, registry_impl: "Registry") -> None:
+    # Because of the class design for RegistryMetadata and RegistryWrapper, where the wrapper
+    # "owns" the object (and a reference to the metadata), but the metadata contains the logic
+    # for creating and initializing the object we have a covariant type in a few of our methods.
+    # These methods should not be used outside of the Registry and RegistryWrapper classes as they
+    # compromise the type safety of this RegistryMetadata class.
+    # TODO: Refactor these methods to belong to RegistryWrapper which has a reference to both
+    # the metadata and the object throughout its creation->initialization phase
+    def _init_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
         init_kwargs = {}
         for name_, value in self._bindings.items():
             init_kwargs[name_] = registry_impl._resolve(value)
@@ -143,11 +151,11 @@ class RegistryMetadata(Generic[T]):
 
         self._cls.__init__(obj, **init_kwargs)
 
-    def _start_object(self, obj: T) -> None:
+    def _start_object(self, obj: T_co) -> None:  # type: ignore[misc]
         if self._start:
             self._start(obj)
 
-    def _close_object(self, obj: T) -> None:
+    def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]
         if self._close:
             self._close(obj)
 
