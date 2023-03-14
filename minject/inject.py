@@ -12,6 +12,7 @@ from .model import Deferred, DeferredAny, Resolver, resolve_value
 from .types import _MinimalMappingProtocol
 
 T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 R = TypeVar("R")
 
 
@@ -135,19 +136,19 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
     return isinstance(key, type)
 
 
-class _RegistryReference(Deferred[T]):
+class _RegistryReference(Deferred[T_co]):
     """Reference to an object in the registry to be loaded later.
     (you should not instantiate this class directly, instead use the
     inject.reference function)"""
 
-    def __init__(self, key: "RegistryKey[T]") -> None:
+    def __init__(self, key: "RegistryKey[T_co]") -> None:
         self._key = key
 
-    def resolve(self, registry_impl: Resolver) -> T:
+    def resolve(self, registry_impl: Resolver) -> T_co:
         return registry_impl.resolve(self._key)
 
     @property
-    def key(self) -> "RegistryKey[T]":
+    def key(self) -> "RegistryKey[T_co]":
         """The key in the Registry of the object this reference is for.
         This key could be either a class or registry metadata about how
         the object should be constructed."""
@@ -188,12 +189,12 @@ def reference(key, **bindings):
         raise TypeError("inject.reference can only include bindings on classes")
 
 
-class _RegistryFunction(Deferred[T]):
+class _RegistryFunction(Deferred[T_co]):
     """Function to call to resolve an initialization argument."""
 
     def __init__(
         self,
-        func: Union[str, Callable[..., T]],
+        func: Union[str, Callable[..., T_co]],
         # TODO: Type with ParamSpec and Concatenate after those are supported by mypy.
         #    https://github.com/python/mypy/issues/10201
         *args: DeferredAny,
@@ -203,7 +204,7 @@ class _RegistryFunction(Deferred[T]):
         self._args = args or ()
         self._kwargs = kwargs or {}
 
-    def resolve(self, registry_impl: Resolver) -> T:
+    def resolve(self, registry_impl: Resolver) -> T_co:
         args = []
         for arg in self.args:
             args.append(resolve_value(registry_impl, arg))
@@ -212,7 +213,7 @@ class _RegistryFunction(Deferred[T]):
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func(registry_impl)(*args, **kwargs)
 
-    def func(self, registry_impl: Resolver) -> Callable[..., T]:
+    def func(self, registry_impl: Resolver) -> Callable[..., T_co]:
         if isinstance(self._func, str):
             # TODO(1.0): deprecated, unnecessary
             # if 'func' is a string use the method with that name
@@ -236,7 +237,7 @@ class _RegistryFunction(Deferred[T]):
     def kwargs(self) -> Dict[str, DeferredAny]:
         return self._kwargs
 
-    def call(self, registry_impl: Resolver) -> T:
+    def call(self, registry_impl: Resolver) -> T_co:
         return self.resolve(registry_impl)
 
     def __str__(self) -> str:
@@ -281,41 +282,43 @@ def _is_key_error(obj: Any) -> TypeGuard[_RaiseKeyError]:
     return obj is RAISE_KEY_ERROR
 
 
-class _RegistryConfig(Deferred[T]):
+class _RegistryConfig(Deferred[T_co]):
     """Reference to a value in the configuration object."""
 
     def __init__(
         self,
         key: Optional[str],
-        default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR,
+        default: Union[T_co, _RaiseKeyError] = RAISE_KEY_ERROR,
         fallback_to_envvar: bool = False,
     ) -> None:
         self._key = key
         self._default = default
         self._fallback_to_envvar = fallback_to_envvar
 
-    def resolve(self, registry_impl: Resolver) -> T:
+    def resolve(self, registry_impl: Resolver) -> T_co:
         if self._key is None:
-            return cast(T, registry_impl.config)  # If _key is None then T is RegistryConfigWrapper
+            return cast(
+                T_co, registry_impl.config
+            )  # If _key is None then T is RegistryConfigWrapper
         if self._key in registry_impl.config:
             # first try to resolve the key from the config mapping
             return registry_impl.config[self._key]
         if self._fallback_to_envvar and self._key in os.environ:
             # then, if allowed, try to fallback to an environment variable
-            return cast(T, os.environ[self._key])
+            return cast(T_co, os.environ[self._key])
 
         # finally fallback to default (which may be to raise a key error)
         if _is_key_error(self._default):
             raise KeyError(self._key)
         else:
-            return cast(T, self._default)
+            return cast(T_co, self._default)
 
     @property
     def key(self) -> Optional[str]:
         return self._key
 
     @property
-    def default(self) -> Optional[Union[T, _RaiseKeyError]]:
+    def default(self) -> Optional[Union[T_co, _RaiseKeyError]]:
         return self._default
 
     def __str__(self) -> str:
@@ -325,9 +328,11 @@ class _RegistryConfig(Deferred[T]):
         return "<_RegistryConfig({!r})>".format(self._key)
 
 
-class _RegistryNestedConfig(Deferred[T]):
+class _RegistryNestedConfig(Deferred[T_co]):
     def __init__(
-        self, keys: Union[Sequence[str], str], default: Union[T, _RaiseKeyError] = RAISE_KEY_ERROR
+        self,
+        keys: Union[Sequence[str], str],
+        default: Union[T_co, _RaiseKeyError] = RAISE_KEY_ERROR,
     ) -> None:
         """
         Allows simpler injection of nested config values.
@@ -340,7 +345,7 @@ class _RegistryNestedConfig(Deferred[T]):
         self._keys: Sequence[str] = keys.split(".") if isinstance(keys, str) else keys
         self._default = default
 
-    def resolve(self, registry_impl: Resolver) -> T:
+    def resolve(self, registry_impl: Resolver) -> T_co:
         sub = registry_impl.config
         for key in self._keys:
             if isinstance(sub, _MinimalMappingProtocol) and key in sub:
@@ -349,7 +354,7 @@ class _RegistryNestedConfig(Deferred[T]):
                 raise KeyError(self._keys)
             else:
                 return self._default
-        return cast(T, sub)
+        return cast(T_co, sub)
 
 
 def nested_config(

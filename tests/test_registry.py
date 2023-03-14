@@ -1,8 +1,25 @@
 import unittest
+from typing import Sequence
 
 import tests.util.test_registry_helpers as helpers
-from duolingo_base.registry.inject import _RegistryFunction
+from duolingo_base.registry.inject import (
+    _RegistryConfig,
+    _RegistryFunction,
+    _RegistryNestedConfig,
+    _RegistryReference,
+    define,
+)
+from duolingo_base.registry.metadata import RegistryMetadata
+from duolingo_base.registry.model import Resolvable
 from duolingo_base.util import registry
+
+
+class _Super:
+    """An empty superclass type."""
+
+
+class _Sub(_Super):
+    """An empty sub-class type."""
 
 
 class RegistryTestCase(unittest.TestCase):
@@ -267,6 +284,51 @@ class RegistryTestCase(unittest.TestCase):
 
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
+
+
+# "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
+# be checked (and possibly fail if there is a bug) by the type checker - mypy.
+def check_registry_interface_variance_resolvable() -> None:
+
+    # pylint: disable=unsubscriptable-object
+    subs: Sequence[Resolvable[_Sub]] = [_Sub(), _Sub(), _RegistryReference(_Sub)]
+    # pylint: disable=unsubscriptable-object
+    supers: Sequence[Resolvable[_Super]] = subs
+    assert subs == supers
+
+
+def check_registry_interface_variance_convenience_methods() -> None:
+    # Test that variance is bound to the type (RegistryMetadata) and not the method.
+    DefinedSub = define(_Sub)
+
+    def check_covariance(_: RegistryMetadata[_Super]) -> None:
+        ...
+
+    check_covariance(DefinedSub)
+
+
+def check_registry_interface_variance_reference() -> None:
+    # Note: We do this in two steps as
+    # super: _RegistryReference[_Super] = _RegistryReference(_Sub)
+    # passes even in old code as the _RegistryReference.__init__() takes a
+    # "RegistryKey[T]" which in this case is a "Type[T]" and "Type" is covariant.
+    # We make things explicit here to ensure we are checking for _RegistryReference's covariance
+    # and not involving inference too much.
+    sub: _RegistryReference[_Sub] = _RegistryReference(_Sub)
+    sup: _RegistryReference[_Super] = sub
+    assert sup
+
+
+def check_registry_interface_variance_config() -> None:
+    sub: _RegistryConfig[_Sub] = _RegistryConfig("akey", default=_Sub())
+    sup: _RegistryConfig[_Super] = sub
+    assert sup
+
+
+def check_registry_interface_variance_nested_config() -> None:
+    sub: _RegistryNestedConfig[_Sub] = _RegistryNestedConfig("a.nested.key", default=_Sub())
+    sup: _RegistryNestedConfig[_Super] = sub
+    assert sup
 
 
 if __name__ == "__main__":
