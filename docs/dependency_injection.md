@@ -1,90 +1,363 @@
 # Dependency Injection
 
-## What is Dependency Injection?
+In this guide, you can learn about dependency injection and the `duoling_base.registry` module.
 
-[Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection)
-is "a software design pattern that implements inversion of control for
-resolving dependencies." Essentially it is a way of initializing classes and
-connecting them to each other via references. It helps to avoid singletons
-and facilitate unit testing.
+To see a working example of `duolingo_base.registry`, see the [Quick Start](#quick-start) section.
 
-The Spring Framework in Java in an example of a popular dependency injection
-framework.
+To learn what dependency injection is, and how you can use it in your projects,
+see the [Fundamentals](#fundamentals) section.
 
-## Why should I use it?
+# Quick Start
 
-If you have an object oriented design, it can be difficult to initialize all
-of the long-lived objects in your program, especially when they contain complex
-nested dependencies, or are referenced from many different contexts. In Python
-web frameworks this can be especially problematic because handling of routes is
-often done with simple functions that are scattered across several modules.
-The common way of dealing with this is by creating global singletons that are
-used everywhere, but this can make configuration and unit testing difficult.
-Below is an example of a program that uses this strategy:
+This section shows you how to create a script that
+uses `duolingo_base.registry` to instantiate objects
+through dependency injection.
 
-```python
-class MyComplexThingManager(object):
-    def __init__(thing_loader, thing_cache):
-        self._loader = thing_loader
-        self._cache = thing_cache
+## Set Up Your Environment
 
-        self._prefill_cache()
+Create and activate a virtual environment by running the following commands in your terminal:
 
-    def calculate_thing(user, action):
-        thing = self._loader.get_for(user_id)
-        thing.change(action)
-        self._cache.update(thing)
-        return thing
-
-THING_INSTANCE = MyComplexThingManager(THING_LOADER_INSTANCE,
-                                       THING_CACHE_INSTANCE)
-
-@app.route('/thing')
-def get_thing(self):
-    user_id = request.args['user_id']
-    action = request.args['action']
-
-    thing = THING_INSTANCE.calculate_thing(user_id, action)
-
-    return render_template('thing.html', thing)
+```console
+python3 -m venv .pyenv
+source .pyenv/bin/activate
 ```
 
-The problem with this approach is the global singleton instances. Any module
-that imports the module containing the global singleton will create a new
-instance of the class automatically, and in this case perform an expensive
-cache fill operation. This will happen for unit tests, scripts and any other
-piece of code that unsuspectingly imports that module (or any other module that
-imports it in turn). To avoid the global singleton that initializes
-automatically, one could write an `init_thing()` function which instantiates
-these classes. Unfortunately, the web service now requires some sort of
-global initialize routine which imports and calls all of those `init_thing()`
-functions.
+Next, import `duolingo-base`:
 
-Another issue adding complexity is the references to the loader and
-the cache (the "dependencies"). In order to initialize the manager you
-need to know how to construct the loader and the cache, and perhaps the loader
-and the cache have their own dependencies, and those further have their own.
-This can result in long chains of constructor calls that need to be changed
-whenever any of the downstream classes change. Additionally, it can be
-difficult to configure these classes in different environments.
+```console
+pip install --index-url https://pypi.duolingo.com/simple duolingo-base
+```
 
-## How does this library handle Dependency Injection?
+Next, create a file named `serve.py`:
 
-This library contains a "Registry" module (duolingo_base.registry). Once
-a `Registry` instance is created, it can be used to initialize objects and
-provide references to dependency objects, while making it easy to configure
-and customize those objects based on the environment. This `Registry` object
-can be a singleton if needed; in Flask, a great place to store it in is the
-`flask.current_app` object, which is available in any request handler. You can
-then treat the `Registry` object like a dictionary to get out a class.
+```console
+touch serve.py
+```
+
+## Write Your Script
+
+First, import the classes and modules you need to use dependency injection:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L1-L2
+
+Next, intialize an instance of the `Registry` class:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L4-L5
+
+Next, create your classes. Use the `inject.bind` function to specify how your `Registry`
+instance should instantiate each of your classes:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L7-L29
+
+Use your `Registry` instance to instantiate your class:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L32-L33
+
+Call a method of your instantiated class:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L35-L39
+
+To view the entire script, click the link in any of the preceding code snippets.
+
+# Fundamentals
+
+In this section, you can learn what **dependency injection** is, and
+how you can use it in your projects. Dependency injection is a software
+engineering technique that allows a programmer to instantiate an object
+without needing to provide arguments to the object's constructor.
+
+To use the dependency injection technique, you must use a
+**dependency injection framework**. A dependency injection framework
+is a library that provides a mechanism that allows a programmer to instantiate
+objects through dependency injection in a specific programming language or
+technology stack.
+
+At Duolingo, we use `duolingo_base.registry` as our dependency injection framework
+when using Python.
+
+# Understand the Value of Dependency Injection
+
+Dependency injection is valuable for the following reasons:
+
+- It allows you to instantiate objects without introducing dependencies
+- It lets you ignore an object's constructor
+
+## Example
+
+The following example illustrates the value of dependency injection through code.
+
+Say you have the following three classes in a module named `serve.py`:
+
+```python
+from db_helpers import DatabaseConfig, DatabaseUser
+from serve_helpers import WebServerConfig, WebServerUser
+
+class _Database:
+
+    def __init__(self, DatabaseConfig, DatabaseUser):
+        ...
+
+class _WebServer:
+
+    def __init__(self, WebServerConfig, WebServerUser)
+        ...
+
+class ApplicationManager:
+
+    def __init__(self, _Database, _WebServer):
+        ...
+```
+
+Without dependency injection, if you need to instantiate
+`ApplicationManager` from a different Python module, you must import
+all the dependencies of `ApplicationManager` into your other Python module
+and instantiate the entire dependency tree:
+
+<!-- untested pseudo-code -->
+
+```python
+from db_helpers import DatabaseConfig, DatabaseUser
+from serve_helpers import WebServerConfig, WebServerUser
+from serve import _Database, _WebServer, ApplicationManager
+
+db_conf = DatabaseConfig(...)
+db_user = DatabaseUser(...)
+db = _Database(db_conf, db_user)
+ws_conf = WebServerConfig(...)
+ws_user = WebServerUser(...)
+ws = _WebServer(ws_conf, ws_user)
+app = ApplicationManager(db, we)
+```
+
+If you modified the preceding classes to use dependency injection, you could
+instantiate `ApplicationManager` from another Python module without
+needing to interact with the constructor. The following code shows
+instantiating `ApplicationManager` through dependency injection:
+
+<!-- untest pseudo-code -->
+
+```python
+from my_registry_instance import registry
+from serve import ApplicationManager
+
+app = registry[ApplicationManager]
+```
+
+# Use Dependency Injection
+
+To use dependency injection through `duolingo_base.registry`, you must
+perform the following actions:
+
+1. Create a `Registry` instance
+2. Provide **dependency resolution definitions** through `inject` functions
+3. Use your dependency resolution definitions to instantiate
+   objects with your `Registry` instance
+
+A dependency resolution definition is a set of instructions that a
+dependency resolution framework uses to instantiate a class. Dependency
+resolution definitions must provide the following information:
+
+- The class to instantiate
+- Arguments for the class to instantiate's constructor
+
+## Create a `Registry` instance
+
+Use the `Registry` class to perform the following actions:
+
+- Instantiate classes from dependency resolution definitions
+- Store instantiated classes for reuse throughout your project
+
+The following code snippet creates an instance of `Registry`:
+
+<!-- untested -->
+
+```python
+registry = Registry()
+```
+
+## Define Dependency Resolution with `inject`
+
+Use the functions `inject.bind` and `inject.define` to specify how dependencies resolve when you instantiate a class through dependency injection.
+
+Use `inject.bind` when you need one instance of a class in your program.
+
+Use `inject.define` when you need more than one instance of a class in your
+program.
+
+### Understand `inject.bind`
+
+The function `inject.bind`, when used as a decorator on a class, adds
+dependency resolution definitions as a
+class attribute to the decorated class.
+
+You must pass arguments to your class' constructor as keyword arguments to
+`inject.bind`.
+
+The following code shows how to use `inject.bind`:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L7-L21
+
+### Understand `inject.define`
+
+The function `inject.define` returns dependency resolution definitions
+with which a `Registry` can instantiate a class.
+
+The following code shows how to use `inject.define`:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L24-L36
+
+## Instantiate Objects through Dependency Resolution with Your `Registry`
+
+Once you have a class with dependency resolution definitions attached
+through `inject.bind`, or dependency resolution definitions created through
+`inject.define`, you can instantiate classes with your `Registry` instance.
+
+To instantiate an object through an instance of the `Registry` class,
+use dictionary lookup syntax:
+
+```
+registry = Registry()
+instance = registry[MyClassWithDependencyResolutionDefined]
+```
+
+When you instantiate a class through a `Registry` instance,
+the `Registry` uses the dependency resolution definitions present in the
+dictionary lookup key to construct your instance.
+
+The dependency resolution definitions contain a tree from which each argument
+to the constructor of the class the `Registry` is instantiating can be
+constructed. The root of the dependency resolution tree is the class you
+wish to instantiate and the leaves are primitive types.
+
+# Specify Recursive Dependency Resolution Definitions
+
+If you need to construct the arguments or your class's constructor
+through dependency resolution, you must specify a
+**recursive dependency resolution definition**. A recursive dependency
+resolution definition is a dependency resolution definition that references
+the dependency resolution definitions of one or more other classes.
+
+You can specify recursive dependency resolution definitions
+with `inject.reference` and `inject.function`.
+
+## Understand `inject.reference`
+
+Use `inject.reference` when you need to reference the dependency resolution
+definition of another class while constructing a dependency resolution
+definition. `inject.reference` receives as an argument either a class that contains dependency resolution definitions added through
+`inject.bind`, or dependency resolution definitions constructed through `inject.define`.
+
+The following code snippet shows how to use `inject.reference`:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L39-L63
+
+## Understand `inject.function`
+
+Use `inject.function` when you need to apply
+logic to dependency resolution definitions
+while constructing a dependency resolution definition.
+
+`inject.function` receives as arguments a callable followed by a set of
+arguments which may or may not contain dependency resolution definitions.
+
+The following code snippet shows how to use `inject.function`:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L66-L90
+
+> **Note**
+> A common use case of `inject.function` is parsing a configuration string into a
+> type-safe object. To learn more about using configuration values with
+> the `duolingo_base.registry` framework, see the
+> [Use Config Parameters](#use-config-parameters) section.
+
+# Storing Instantiated Classes
+
+When you instantiate a class with the `duolingo_base.registry` framework,
+the framework stores your instantiated class as the value in a key value
+pair.
+
+When you instantiate a class with dependency resolution
+definitions attached to that class through `inject.bind`, use
+that class' class object as the key to retrieve your instantiated class.
+To view an example of retrieving a class with a class object key,
+see the [Understand `inject.bind`](#understand-injectbind) section.
+
+When you instantiate a class through dependency resolution definitions
+created through `inject.define`, use the dependency resolution definitions
+as the key to retrieve your instantiated class. To view an example of retrieving
+a class through dependency resolution definitions, see the
+[Understand `inject.define`](#understand-injectdefine)
+section.
+
+> **Note**
+> On the first instantiation of your class, your `Registry` instance uses the
+> dependency resolution definitions contained in the you passed to
+> instantiate your class.
+
+# Dependency Injection and Flask
+
+In this section, you can learn how to use `duolingo_base.registry` with the `Flask` web framework.
+
+## Use Config Parameters
+
+To use parameters from the `YAML` files in your `config/` directory in
+your dependency resolution definitions,
+use the `inject.config` and `inject.nested_config` functions.
+
+The `inject.config` function allows you to access a value in a `YAML` config file, and does not support [dot notation](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/Basics#dot_notation)
+for object traversal. The `inject.nested_config`
+function allows you to access a value in a `YAML` config file, and does
+support dot notation for object traversal.
+
+For example lets, say your `config/prod.yml` file contains the following
+snippet of `YAML` code:
+
+```yaml
+nested:
+  value: i am nested
+
+flat_value: i am flat
+```
+
+You can access the preceding values defined `config/prod.yml` in a
+dependency resolution definition as follows:
+
+<!-- untested -->
+
+```python
+inject.bind(
+    flat_value = inject.config("flat_value")
+    nested_value = inject.nested_config("nested.value")
+)
+class MyClass:
+    ...
+```
+
+## Global Registry Instance
+
+To access a `Registry` instance throughout your application, store an
+intialized `Registry` instance in the `flask.current_app` object.
+
+The following code snippet shows how to attach a `Registry` instance
+to a `Flask` application:
+
+<!-- Code snippets in this section are from previous documentation -->
 
 ```python
 app = flask.application()
 app.registry = registry.initialize()
+```
 
-class PhraseList(object):
-    def get_phrase(self, name):
-        return random.choice(['Hello {}', 'Goodbye {}']).format(name)
+The following code snippet shows how to retrieve the `Registry` instance
+in the view layer of your application:
+
+> **Warning**
+> The following code snippet contains a bug related to thread safety.
+> To learn what this bug is and how to fix it, see the [Thread Safety](#thread-safety)
+> section of this guide.
+
+```python
+from flask import current_app
 
 @app.route('/phrase')
 def get_phrase(self):
@@ -92,71 +365,60 @@ def get_phrase(self):
     return phrases.get_phrase(request.args['name'])
 ```
 
-The registry will return an initialized instance of PhraseList which you can
-use. The registry will store this instance and return it on future calls.
+## Thread Safety
 
-If you have a class that needs init arguments, you can tell the registry what
-values to use with the `duolingo_base.registry.inject` annotation system.
+The `Registry` object is not thread safe, and you should not access
+it in threaded sections of your code. This means that you should not
+use the `Registry` to instantiate objects in a function decorated with
+`@app.route`, or in any function called from a function decorated with
+`@app.route`.
 
-```python
-@inject.bind(phrases=['How are you, {}?', 'So long {}'])
-class PhraseList(object):
-    def __init__(self, phrases):
-        self._phrases = phrases
+> **Important**
+> Ensure you resolve all dependency resolution definitions with your
+> `Registry` instance at application startup. Your `Registry` instance
+> resolves a dependency resolution definition the first time you perform
+> a dictionary lookup with the key containing that dependency
+> resolution on your `Registry` instance.
 
-    def get_phrase(self, name):
-        return random.choice(self._phrases).format(name)
-```
+To use a `Registry` instance in a `Flask` route, use **class-based views**.
+Class-based views are a feature of the `duolingo_base` library that allow
+you to add state to your route handlers.
 
-One reason this could be useful is if you want to try different phrases in
-testing, you could then create an instance with another value. This really
-becomes powerful when combined with the `inject.reference` function.
+The following code-snippet shows how to use an object constructed through a
+`Registry` instance within a `Flask` route in a thread safe manner:
 
-```python
-@inject.bind(url='http://localhost/my_phrases.txt')
-class PhraseLoader(object):
-    def __init__(self, url):
-        self._url = url
-
-    def load_phrases(self, url):
-        ...
-
-
-@inject.bind(loader=inject.reference(PhraseLoader),
-             category='greetings')
-class PhraseBuilder(object):
-    def __init__(self, loader, category):
-        self._loader = loader
-        self._category = category
-
-    def get_phrase(self, name):
-        phrases = self._loader.load_phrases(self._category)
-        return random.choice(phrases) % name
-```
-
-Now you can have a chain of objects that depend on each other; perhaps the
-loader uses a `PhraseCache` to cache results that it gets from a `PhraseApi`.
-The `PhraseApi` may in turn share the same instance of `ApiClient` with the
-hypothetical `UserApi` and `HistoryApi`, each in separate modules.
-
-In addition to `bind`, there is a `define` function which is useful when you
-don't need to write any new code in a new class, but just want to
-instantiate a generic class that already exists. (You can also use this
-capability to pass init arguments to the reference function.)
-Let's say we already have a class called `GenericCache` that handles caching
-objects, and a `GenericLoader` which will fallback to an api call if the
-object is missing from the cache.
+<!-- Untested code snippet -->
 
 ```python
-PhraseLoader = inject.define(GenericLoader,
-    api=inject.reference(PhraseApi),
-    cache=inject.reference(GenericCache, name="phrase", expire=60),
+from flask import current_app
+from application import MyClass
+from duolingo_base.view import FlaskView, View
+
+@inject.bind(
+    argument = "dependencies shmapendencies"
 )
+class MyView(FlaskView):
+    def __init__(self, argument) -> None:
+        super().__init__()
+        self.class_instance = current_app.registry[MyClass]
+        self.argument = argument
 
-loader = registry[PhraseLoader]
+    @View.route("/message", methods=["GET"])
+    def get_message(self) -> str:
+        return f"{self.class_instance.message} {self.argument}!"
 ```
 
-The `loader` variable will now reference an instance of the `GenericLoader`
-type that was initialized using the provided api and cache arguments.
-Additionally, the cache argument will be a `GenericCache` initialized with the
-provided name and expiration time.
+# Testing Dependency Injection enabled Code
+
+You can test code that uses `duolingo_base.registry` exactly as
+you would test code that does not use `duolingo_base.registry`.
+This is because no features of `duolingo_base.registry` change
+the API or behavior of classes in your code.
+
+For example, say you use the following class in your application:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/class_for_test.py#L7-L19
+
+You can test this class with the `pytest` like this:
+
+https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/test.py#L4-L7
