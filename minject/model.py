@@ -1,10 +1,18 @@
 import abc
-from typing import Type  # pylint: disable=unused-import
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
+from typing import (  # pylint: disable=unused-import
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
 from .config import RegistryConfigWrapper
+from .types import Arg
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -30,6 +38,9 @@ class Resolver(abc.ABC):
     @abc.abstractmethod
     def config(self) -> RegistryConfigWrapper:
         ...
+
+
+MockingFunction: TypeAlias = Callable[[Arg], Any]
 
 
 class Deferred(abc.ABC, Generic[T_co]):

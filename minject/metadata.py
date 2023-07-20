@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
 )
 
-from .model import DeferredAny
+from .model import DeferredAny, RegistryKey
 from .types import Kwargs
 
 if TYPE_CHECKING:
@@ -40,6 +40,25 @@ def _get_meta(cls: Type[T], include_bases: bool = True) -> "Optional[RegistryMet
         return getattr(cls, _INJECT_METADATA_ATTR, None)
     else:
         return cls.__dict__.get(_INJECT_METADATA_ATTR)
+
+
+def _get_meta_from_key(key: "RegistryKey[T]") -> "RegistryMetadata[T]":
+
+    if isinstance(key, type):
+        meta = _get_meta(key, include_bases=False)
+        if meta is not None:
+            return meta
+        else:
+            base = _get_meta(key, include_bases=True)
+            if base is not None:
+                meta = RegistryMetadata(key, bindings=dict(base.bindings))
+            else:
+                meta = RegistryMetadata(key)
+            return meta
+    elif isinstance(key, RegistryMetadata):
+        return key
+    else:
+        raise ValueError("cannot get metadata from key: {!r}".format(key))
 
 
 def _gen_meta(cls: Type[T]) -> "RegistryMetadata[T]":
