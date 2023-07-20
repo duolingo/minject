@@ -2,7 +2,8 @@ from typing import Any, Dict, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
-Kwargs = Dict[str, Any]
+Arg = Any
+Kwargs = Dict[str, Arg]
 
 # MinimumMapping Key
 K_contra = TypeVar("K_contra", contravariant=True)

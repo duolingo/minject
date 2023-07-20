@@ -7,9 +7,12 @@ from duolingo_base.registry.inject import (
     _RegistryFunction,
     _RegistryNestedConfig,
     _RegistryReference,
+    bind,
     define,
+    reference,
 )
 from duolingo_base.registry.metadata import RegistryMetadata
+from duolingo_base.registry.mock import mock
 from duolingo_base.registry.model import Resolvable
 from duolingo_base.util import registry
 
@@ -222,6 +225,177 @@ class RegistryTestCase(unittest.TestCase):
             "create", registry.reference(helpers.Factory), 1
         )
         self.assertEqual("1", func_factory.call(self.registry))
+
+    def test_mock(self) -> None:
+        """Test canonical usage of mock"""
+
+        @bind(a="hello", b="world")
+        class ClassToMock:
+            def __init__(self, a, b):
+                a.upper()
+                self.a = a
+                self.b = b
+
+            def p(self):
+                self.b.lower()
+
+        mocked = mock(ClassToMock)
+        mocked.a.upper.assert_called_once()
+        mocked.b.upper.assert_not_called()
+        mocked.b.lower.assert_not_called()
+        mocked.p()
+        mocked.b.lower.assert_called_once()
+
+    def test_mock_with_define(self) -> None:
+        """
+        Test that mock works with metadata keys created
+        through inject.define
+        """
+
+        class ClassToMock:
+            def __init__(self, a, b):
+                a.upper()
+                self.a = a
+                self.b = b
+
+            def p(self):
+                self.b.lower()
+
+        my_class = define(ClassToMock, a="hi", b="bye")
+        mocked = mock(my_class)
+
+        mocked.a.upper.assert_called_once()
+        mocked.b.upper.assert_not_called()
+
+        mocked.p()
+        mocked.b.lower.assert_called_once()
+
+    def test_failed_mock_no_binding(self) -> None:
+        """Test that mock fails when a class has no bindings available"""
+
+        class ClassToMock:
+            def __init__(self, a):
+                print(a)
+
+        my_class = define(ClassToMock)
+        with self.assertRaises(TypeError):
+            mock(my_class)
+
+    def test_failed_mock_str_key(self) -> None:
+        class MyClass:
+            def __init__(self, a):
+                self.a = a
+
+        self.registry["a"] = MyClass("hi")
+        with self.assertRaises(ValueError):
+            mock("a")
+
+    def test_mock_already_instantiated_class(self) -> None:
+        class MyClass:
+            def __init__(self, a):
+                self.a = a
+
+            def call_a(self):
+                return self.a()
+
+        definition = define(MyClass, a="hi")
+        _ = self.registry[definition]
+        mocked = mock(definition)
+        mocked.call_a()
+        mocked.a.assert_called_once()
+
+    def test_mock_only_specified_bindings(self) -> None:
+        """
+        Test that default arguments are not mocked if bindings
+        are not specified for those arguments
+        """
+
+        @bind(a="a")
+        class MyClass:
+            def __init__(self, a, b=None):
+                self.a = a
+                self.b = b
+
+        mocked = mock(MyClass)
+        assert isinstance(mocked.a, str)
+        assert mocked.b is None
+
+    def test_mock_multi_level_bind(self) -> None:
+        """Test that a class with deferred bindings can be mocked"""
+
+        @bind(a="a")
+        class MyClass:
+            def __init__(self, a, b=None):
+                self.a = a
+                self.b = b
+
+            def call_a(self):
+                self.a()
+
+        @bind(c=reference(MyClass))
+        class MyChildClass:
+            def __init__(self, c):
+                self.c = c
+
+            def call_a(self):
+                self.c.call_a()
+
+        mocked = mock(MyChildClass)
+        mocked.call_a()
+        mocked.c.call_a.assert_called_once()
+
+    def test_mock_multi_level_define(self) -> None:
+        """
+        Test that class with deferred bindings specified
+        through inject.define can be mocked
+        """
+
+        class MyClass:
+            def __init__(self, a, b=None):
+                self.a = a
+                self.b = b
+
+            def call_a(self):
+                self.a()
+
+        class MyChildClass:
+            def __init__(self, c):
+                self.c = c
+
+            def call_a(self):
+                self.c.call_a()
+
+        d0 = define(MyClass, a="a")
+        d1 = define(MyChildClass, c=reference(d0))
+
+        mocked = mock(d1)
+        mocked.call_a()
+        mocked.c.call_a.assert_called_once()
+
+    def test_mock_inherited_binding(self) -> None:
+        """Test that a class with inherited bindings can be mocked"""
+
+        @bind(a="a", b="b")
+        class MyClass:
+            def __init__(self, a, b=None):
+                self.a = a
+                self.b = b
+
+            def call_a(self):
+                self.a()
+
+        class MyChildClass(MyClass):
+            def __init__(self, a, b):
+                self.a = a
+                self.b = b
+
+            def call_a(self):
+                self.a.upper()
+
+        mocked = mock(MyChildClass)
+        mocked.call_a()
+        mocked.a.upper.assert_called_once()
+        mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
         self.registry.config.from_dict(

@@ -148,6 +148,24 @@ class _RegistryReference(Deferred[T_co]):
         return registry_impl.resolve(self._key)
 
     @property
+    def type_of_object_referenced_in_key(self) -> "Type[T_co]":
+        if type(self.key) == RegistryMetadata:
+            try:
+                return self.key.interfaces[0]
+            except IndexError:
+                raise TypeError("Unable to fetch type of key, no interface.")
+        elif type(self.key) == type:
+            return self.key
+
+        elif type(self.key) == str:
+            raise TypeError(
+                "The Key is a string. No object is being referenced from within the key itself."
+            )
+
+        else:
+            raise TypeError("The Key is neither a string, type, or RegistryMetadata")
+
+    @property
     def key(self) -> "RegistryKey[T_co]":
         """The key in the Registry of the object this reference is for.
         This key could be either a class or registry metadata about how

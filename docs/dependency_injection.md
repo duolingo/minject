@@ -175,7 +175,7 @@ The following code snippet creates an instance of `Registry`:
 registry = Registry()
 ```
 
-## Define Dependency Resolution with `inject`
+## Define Dependency Resolution Definitions with `inject`
 
 Use the functions `inject.bind` and `inject.define` to specify how dependencies resolve when you instantiate a class through dependency injection.
 
@@ -422,3 +422,28 @@ https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddc
 You can test this class with the `pytest` like this:
 
 https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/test.py#L4-L7
+
+## Instantiate Mock Objects `duolingo_base.registry`
+
+To instantiate an instance of a class with mock constructor arguments
+specified by your dependency resolution definitions, use the `mock` function.
+
+For example, say you have the following classes in your application:
+
+https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L1-L23
+
+To instantiate an instance of the `Child` class with mock constructor arguments
+corresponding to your dependency resolution definitions, use the `mock`
+function as follows:
+
+https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L25-L31
+
+If you would like to instantiate your class with mocks other than
+`MagicMock`, pass a mocking function. A mocking function is a
+function that takes a binding to your function as an argument and
+returns your desired mock object.
+
+The following code snippet shows how to pass a mocking function to the
+`mock` function:
+
+https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L39-L49
