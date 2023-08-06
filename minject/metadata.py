@@ -43,6 +43,19 @@ def _get_meta(cls: Type[T], include_bases: bool = True) -> "Optional[RegistryMet
 
 
 def _get_meta_from_key(key: "RegistryKey[T]") -> "RegistryMetadata[T]":
+    """
+    Given a RegistryKey, return the metadata associated with the key.
+    A RegistryKey can have metadata associated with it in the following ways:
+
+    - As a class attribute
+    - As a class attribute on a base class
+    - The key can be a type, in which case metadata is generated from the
+      type without bindings.
+    - The key itself can be RegistryMetadata
+
+    String keys cannot have metadata associated with them. Passing a string key
+    to this function raises a KeyError.
+    """
 
     if isinstance(key, type):
         meta = _get_meta(key, include_bases=False)
@@ -58,7 +71,7 @@ def _get_meta_from_key(key: "RegistryKey[T]") -> "RegistryMetadata[T]":
     elif isinstance(key, RegistryMetadata):
         return key
     else:
-        raise ValueError("cannot get metadata from key: {!r}".format(key))
+        raise KeyError("cannot get metadata from key: {!r}".format(key))
 
 
 def _gen_meta(cls: Type[T]) -> "RegistryMetadata[T]":
