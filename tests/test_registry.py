@@ -287,7 +287,7 @@ class RegistryTestCase(unittest.TestCase):
                 self.a = a
 
         self.registry["a"] = MyClass("hi")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(KeyError):
             mock("a")
 
     def test_mock_already_instantiated_class(self) -> None:

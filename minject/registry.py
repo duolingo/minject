@@ -5,7 +5,7 @@ import logging
 from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from .config import RegistryConfigWrapper, RegistrySubConfig
-from .metadata import RegistryMetadata, _get_meta
+from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
 LOG = logging.getLogger(__name__)
@@ -257,32 +257,31 @@ class Registry(Resolver):
         Returns:
             The requested object or default if not found.
         """
+
+        if key == object:
+            return None  # NEVER auto-init plain object
+
         if isinstance(key, str):
             return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))))
-        elif isinstance(key, type):
-            meta = _get_meta(key, include_bases=False)
-            if meta is not None:
-                # class has registry metadata that can be used to construct it
+
+        meta = _get_meta_from_key(key)
+
+        if isinstance(key, type):
+
+            # if a type has metadata attached to it as an attribute,
+            # the registry must use that metadata to construct the object
+            # or query for a constructed object. This is because the user
+            # has intentionally added metadata to the class, and thus
+            # we should not use metadata inherited from interfaces.
+            if _get_meta(key, include_bases=False) is not None:
                 return _unwrap(self._get_by_metadata(meta, default))
 
             # TODO: we need to lock!!!!
             obj_list = self._by_iface.get(key)
             if obj_list:
                 return _unwrap(obj_list[0])
-            else:
-                if key == object:
-                    return None  # NEVER auto-init plain object
 
-                base = _get_meta(key, include_bases=True)
-                if base is not None:
-                    meta = RegistryMetadata(key, bindings=dict(base.bindings))
-                else:
-                    meta = RegistryMetadata(key)
-                return _unwrap(self._get_by_metadata(meta, default))
-        elif isinstance(key, RegistryMetadata):
-            return _unwrap(self._get_by_metadata(key, default))
-        else:
-            raise KeyError("invalid key for Registry: {!r}".format(key))
+        return _unwrap(self._get_by_metadata(meta, default))
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.
