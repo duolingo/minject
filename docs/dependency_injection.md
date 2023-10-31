@@ -206,6 +206,52 @@ The following code shows how to use `inject.define`:
 
 https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L24-L36
 
+## Understand `inject_define` and `inject_field`
+
+Use the functions `inject_define` and `inject_field` to automatically generate an `__init__` method
+for your class and specify dependency resolution definitions for the parameters of your `__init__`
+method.
+
+To see a code sample demonstrating how to use
+`inject_define` and `inject_field`, see the
+[Reduce Code Duplication](#reduce-code-duplication) section.
+
+> **Note**
+> The functions `inject_define` and `inject_field` are wrappers
+> around the functions `attr.define` and `attr.field`.
+> By default, `inject_define` disables all automatically generated code except `__init__`
+> methods created by `attr.define`. You can configure how `attr.define` creates your decorated
+> class with the `define_kwargs` keyword argument of `inject_define`.
+
+### Reduce Code Duplication
+
+Use `inject_define` and `inject_field` to reduce the code duplication that occurs
+from using `inject.bind`. For example, let's say you want to specify the following dependency
+resolution definitions for two classes, `Adult` and `Child`:
+
+https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L30-L40
+
+Notice that you must reference the keyword argument to which the dependency resolution definitions correspond three times in each class:
+
+- Once in the `inject.bind` decorator
+- Once in the `__init__` method constructor
+- Once in the `__init__` method body
+
+You can refactor the preceding code with `inject_field` and `inject_define` to reduce
+code duplication as follows:
+
+https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L46-L54
+
+### Typing
+
+`inject_define` and `inject_field` require a plugin to allow generated `__init__` methods
+to be type checked by `mypy`.
+
+To add the plugin to `mypy`, add the following code snippet to your
+`mypy.ini` or `setup.cfg` file:
+
+https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/mypy.ini#L1-L2
+
 ## Instantiate Objects through Dependency Resolution with Your `Registry`
 
 Once you have a class with dependency resolution definitions attached
