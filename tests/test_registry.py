@@ -463,7 +463,6 @@ class RegistryTestCase(unittest.TestCase):
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
 # be checked (and possibly fail if there is a bug) by the type checker - mypy.
 def check_registry_interface_variance_resolvable() -> None:
-
     # pylint: disable=unsubscriptable-object
     subs: Sequence[Resolvable[_Sub]] = [_Sub(), _Sub(), _RegistryReference(_Sub)]
     # pylint: disable=unsubscriptable-object

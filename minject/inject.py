@@ -7,8 +7,13 @@ from typing import Any, Callable, Dict, Optional, Sequence, Type, TypeVar, Union
 from typing_extensions import TypeGuard
 
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
-from .model import RegistryKey  # pylint: disable=unused-import
-from .model import Deferred, DeferredAny, Resolver, resolve_value
+from .model import (
+    Deferred,
+    DeferredAny,
+    RegistryKey,  # pylint: disable=unused-import
+    Resolver,
+    resolve_value,
+)
 from .types import _MinimalMappingProtocol
 
 T = TypeVar("T")
@@ -25,12 +30,13 @@ class _RaiseKeyError:
     def __nonzero__(self):
         return False
 
-    def __bool__(self):  # noqa:E301
+    def __bool__(self):
         return False
 
 
 # Placeholder to indicate a method should raise a KeyError instead of returning a default.
 RAISE_KEY_ERROR = _RaiseKeyError()
+
 
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
@@ -139,7 +145,8 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
 class _RegistryReference(Deferred[T_co]):
     """Reference to an object in the registry to be loaded later.
     (you should not instantiate this class directly, instead use the
-    inject.reference function)"""
+    inject.reference function)
+    """
 
     def __init__(self, key: "RegistryKey[T_co]") -> None:
         self._key = key
@@ -169,17 +176,18 @@ class _RegistryReference(Deferred[T_co]):
     def key(self) -> "RegistryKey[T_co]":
         """The key in the Registry of the object this reference is for.
         This key could be either a class or registry metadata about how
-        the object should be constructed."""
+        the object should be constructed.
+        """
         return self._key
 
     def __str__(self) -> str:
         if _is_type(self._key):
-            return "ref({})".format(self._key.__name__)
+            return f"ref({self._key.__name__})"
         else:
-            return "ref({})".format(self._key)
+            return f"ref({self._key})"
 
     def __repr__(self) -> str:
-        return "<_RegistryReference({!r})>".format(self._key)
+        return f"<_RegistryReference({self._key!r})>"
 
 
 @overload
@@ -270,9 +278,7 @@ class _RegistryFunction(Deferred[T_co]):
         )
 
     def __repr__(self) -> str:
-        return "<_RegistryFunction({!r}(args={!r}, kwargs={!r}))>".format(
-            self._func, self._args, self._kwargs
-        )
+        return f"<_RegistryFunction({self._func!r}(args={self._args!r}, kwargs={self._kwargs!r}))>"
 
 
 def function(
@@ -340,10 +346,10 @@ class _RegistryConfig(Deferred[T_co]):
         return self._default
 
     def __str__(self) -> str:
-        return "config({})".format(self._key)
+        return f"config({self._key})"
 
     def __repr__(self) -> str:
-        return "<_RegistryConfig({!r})>".format(self._key)
+        return f"<_RegistryConfig({self._key!r})>"
 
 
 class _RegistryNestedConfig(Deferred[T_co]):

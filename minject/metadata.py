@@ -56,7 +56,6 @@ def _get_meta_from_key(key: "RegistryKey[T]") -> "RegistryMetadata[T]":
     String keys cannot have metadata associated with them. Passing a string key
     to this function raises a KeyError.
     """
-
     if isinstance(key, type):
         meta = _get_meta(key, include_bases=False)
         if meta is not None:
@@ -71,7 +70,7 @@ def _get_meta_from_key(key: "RegistryKey[T]") -> "RegistryMetadata[T]":
     elif isinstance(key, RegistryMetadata):
         return key
     else:
-        raise KeyError("cannot get metadata from key: {!r}".format(key))
+        raise KeyError(f"cannot get metadata from key: {key!r}")
 
 
 def _gen_meta(cls: Type[T]) -> "RegistryMetadata[T]":
@@ -139,7 +138,8 @@ class RegistryMetadata(Generic[T_co]):
     @property
     def key(self) -> Hashable:
         """The unique identifier used by this registry object.
-        By default this is a combination of class and bindings."""
+        By default this is a combination of class and bindings.
+        """
         if self._key is None:
             self._key = self._gen_key()
         return self._key
@@ -157,7 +157,8 @@ class RegistryMetadata(Generic[T_co]):
     def update_bindings(self, **bindings: DeferredAny) -> None:
         """Upate the 'bindings' (init args) for this registry object.
         NOTE: DO NOT change the bindings after this metadata has been
-        added to the registry, it will cause undefined behavior."""
+        added to the registry, it will cause undefined behavior.
+        """
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
 

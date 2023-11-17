@@ -4,6 +4,7 @@ from duolingo_base.registry import Registry, inject
 # Initialize a Registry
 registry = Registry()
 
+
 # Create classes with dependency hierarchy specified
 # through the inject.bind function.
 @inject.bind(message_start="I was initialized", message_end="with dependency injection")

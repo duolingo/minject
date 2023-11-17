@@ -7,13 +7,11 @@ from duolingo_base.registry.registry import Registry
 
 
 class AbstractAdult(ABC):
-
     name: str
     age: int
 
 
 class AbstractChild(ABC):
-
     age: int
     hobby: str
 

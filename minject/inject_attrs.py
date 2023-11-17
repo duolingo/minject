@@ -63,7 +63,6 @@ def _get_compatible_attrs_define_kwargs() -> Dict[str, bool]:
     """
     get kwargs compatible with current running version of attrs
     """
-
     # if you are running python 3.8 or greater, use importlib.metadata
     # to get the version of attrs. Otherwise, use the __version__ attribute
     if version.parse(python_version()) >= version.parse("3.8.0"):
@@ -120,7 +119,6 @@ def _get_init_kwarg_assignment() -> str:
     get the name of the variable that will be assigned the return
     value of the function that calls this function.
     """
-
     frame = inspect.currentframe()
     outer_frame = inspect.getouterframes(frame)[_DEPTH_OF_VAR_TO_WHICH_BINDING_IS_ASSIGNED]
     optional_code_context = inspect.getframeinfo(outer_frame[0]).code_context
@@ -139,7 +137,6 @@ def inject_field(binding=_T, **attr_field_kwargs) -> Any:
     Wrapper around attr.field which takes an argument to specify registry
     bindings
     """
-
     # add the binding to the key_binding_mapping to be retrieved in the call
     # to inject_define
     var_name = _get_init_kwarg_assignment()
@@ -153,7 +150,6 @@ def inject_define(
     maybe_cls: Optional[Type[_T]] = None,
     define_kwargs: Dict[str, Any] = _INJECT_DEFINE_DEFINE_KWARGS_DEFAULT_VAL,
 ):
-
     # use default attrs kwargs or user supplied attrs kwargs
     attrs_kwargs: Dict[str, Any] = {}
     if define_kwargs is not _INJECT_DEFINE_DEFINE_KWARGS_DEFAULT_VAL:
@@ -167,7 +163,6 @@ def inject_define(
     depth_of_caller = _DEPTH_OF_INJECT_DEFINE_CALLER
 
     def inject_define_inner(cls: Type[_P]) -> Type[_P]:
-
         # apply attr.define to generate static methods
         cls = define(cls, **attrs_kwargs)
 
