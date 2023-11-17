@@ -8,7 +8,6 @@ from duolingo_base.registry.registry import Registry
 def test_registry_instantiation() -> None:
     @inject_define
     class TestClass:
-
         a: str = inject_field(binding="hello")
         b: float = inject_field(binding=10.0)
         c: int = 100
@@ -18,7 +17,6 @@ def test_registry_instantiation() -> None:
         g: int = inject_field(binding=1, default=2)
 
         def sum_nums(self) -> int:
-
             return self.c + int(self.b) + self.g + self.f
 
     registry = Registry()
@@ -33,12 +31,10 @@ def test_bind_with_define() -> None:
     @bind(a=4)  # type: ignore
     @inject_define
     class TestClass:
-
         a: int
         b: int = inject_field(binding=100)
 
         def a_x_100(self) -> int:
-
             return self.a * self.b
 
     registry = Registry()
@@ -47,17 +43,14 @@ def test_bind_with_define() -> None:
 
 
 def test_pass_args_to_attrs():
-
     a_kwarg_binding = "hello"
 
     @inject_define(define_kwargs={"eq": False})
     class TestClassNoEq:
-
         a: str = inject_field(binding=a_kwarg_binding)
 
     @inject_define(define_kwargs={"eq": True})
     class TestClassEq:
-
         a: str = inject_field(binding=a_kwarg_binding)
 
     registry = Registry()
@@ -74,7 +67,6 @@ def test_pass_args_to_attrs():
 def test_normal_instantiation() -> None:
     @inject_define
     class TestClass:
-
         a: str
         b: float = inject_field(binding=10.0)
         c: int = 100
@@ -82,7 +74,6 @@ def test_normal_instantiation() -> None:
         f: int = inject_field(binding=1, default=2)
 
         def sum_nums(self) -> int:
-
             return self.c + int(self.b) + self.f + self.d
 
     normal_instance = TestClass(a="hi", b=10000)
@@ -99,7 +90,6 @@ def test_validator() -> None:
 
     @inject_define
     class TestClass:
-
         a: int = inject_field(binding=1, default=2, validator=less_than_10)
 
     try:

@@ -21,13 +21,11 @@ class RegistryMypyPlugin(Plugin):
     """
 
     def get_class_decorator_hook(self, fullname: str):
-
         if _INJECT_DEFINE_FUNC in fullname:
             return attrs.attr_tag_callback
         return None
 
     def get_class_decorator_hook_2(self, fullname: str):
-
         if _INJECT_DEFINE_FUNC in fullname:
             # slots default added in mypy version 1.5
             return partial(
@@ -38,26 +36,23 @@ class RegistryMypyPlugin(Plugin):
 
 class RegistryMypyPluginLegacy(Plugin):
     def get_class_decorator_hook(self, fullname: str):
-
         if _INJECT_DEFINE_FUNC in fullname:
             return attrs.attr_tag_callback
         return None
 
     def get_class_decorator_hook_2(self, fullname: str):
-
         if _INJECT_DEFINE_FUNC in fullname:
             return partial(attrs.attr_class_maker_callback, auto_attribs_default=None)
         return None
 
 
 def plugin(mypy_version: str):
-
     too_old_version = version.parse(mypy_version) < version.parse("0.6.0")
 
     if too_old_version:
         raise ValueError(
             "mypy version must be at least 0.6.0 to use the registry plugin."
-            "You are using version {}".format(mypy_version)
+            f"You are using version {mypy_version}"
         )
 
     use_legacy = version.parse(mypy_version) < version.parse("1.5.0")

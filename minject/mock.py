@@ -20,7 +20,6 @@ def mock(key: "RegistryKey[T]", mocking_function: Optional[MockingFunction] = No
     Return a tuple containing the instance and a dictionary of the
     mocks used to instantiate it.
     """
-
     mocking_f = mocking_function or DEFAULT_MOCKING_FUNCTION
 
     meta_to_mock = _get_meta_from_key(key)
@@ -41,13 +40,11 @@ def mock(key: "RegistryKey[T]", mocking_function: Optional[MockingFunction] = No
         class_instantiated_with_mocks = iface(**kwargs_to_mocks)
     except TypeError:
         raise TypeError(
-            (
-                f"Unable to instantiate class {meta_to_mock.name}"
-                "with mocks. Provided arguments do not match class"
-                "signature.\n"
-                f"arguments: {kwargs_to_mocks}\n"
-                f"signature: {iface}"
-            )
+            f"Unable to instantiate class {meta_to_mock.name}"
+            "with mocks. Provided arguments do not match class"
+            "signature.\n"
+            f"arguments: {kwargs_to_mocks}\n"
+            f"signature: {iface}"
         )
     except IndexError:
         raise IndexError(

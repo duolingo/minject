@@ -78,7 +78,7 @@ class RegistryConfigWrapper:
                     result.update(kwargs)
 
                 # then apply config for the fully qualified class name
-                cls_module = "{}.{}".format(meta._cls.__module__, cls_name)
+                cls_module = f"{meta._cls.__module__}.{cls_name}"
                 kwargs = by_class.get(cls_module)
                 if kwargs:
                     result.update(kwargs)

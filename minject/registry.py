@@ -17,7 +17,7 @@ class _AutoOrNone:
     def __nonzero__(self):
         return False
 
-    def __bool__(self):  # noqa:E301
+    def __bool__(self):
         return False
 
 
@@ -241,7 +241,7 @@ class Registry(Resolver):
         elif isinstance(key, RegistryMetadata):
             return bool(self._get_by_metadata(key, False))
         else:
-            raise KeyError("invalid key for Registry: {!r}".format(key))
+            raise KeyError(f"invalid key for Registry: {key!r}")
 
     def get(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
@@ -257,7 +257,6 @@ class Registry(Resolver):
         Returns:
             The requested object or default if not found.
         """
-
         if key == object:
             return None  # NEVER auto-init plain object
 
@@ -267,7 +266,6 @@ class Registry(Resolver):
         meta = _get_meta_from_key(key)
 
         if isinstance(key, type):
-
             # if a type has metadata attached to it as an attribute,
             # the registry must use that metadata to construct the object
             # or query for a constructed object. This is because the user
@@ -319,7 +317,7 @@ class Registry(Resolver):
             # self._set_by_metadata(key, RegistryWrapper(value))
             raise KeyError("cannot set value in registry by metadata")
         else:
-            raise KeyError("invalid key for Registry: {!r}".format(key))
+            raise KeyError(f"invalid key for Registry: {key!r}")
 
     # TODO __delitem__ (should work same as get/set)
     # TODO __iter__ (should return some sort of (obj, name) structure

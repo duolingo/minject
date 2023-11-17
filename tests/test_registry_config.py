@@ -35,9 +35,9 @@ def test_config_simple(reg: Registry) -> None:
     reg.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2, "ENVVAR": 3})
 
     config = reg[Configable]
-    assert 1 == config.required
-    assert 2 == config.optional
-    assert 3 == config.envvar
+    assert config.required == 1
+    assert config.optional == 2
+    assert config.envvar == 3
 
 
 def test_config_required(reg: Registry) -> None:
@@ -51,9 +51,9 @@ def test_config_optional(reg: Registry) -> None:
     reg.config.from_dict({"REQUIRED": 1, "ENVVAR": 3})
 
     config = reg[Configable]
-    assert 1 == config.required
+    assert config.required == 1
     assert config.optional is None
-    assert 3 == config.envvar
+    assert config.envvar == 3
 
 
 def test_config_envvar(reg: Registry) -> None:
@@ -61,9 +61,9 @@ def test_config_envvar(reg: Registry) -> None:
 
     with mock.patch.dict("os.environ", {"ENVVAR": "value"}):
         config = reg[Configable]
-        assert 1 == config.required
-        assert 2 == config.optional
-        assert "value" == config.envvar
+        assert config.required == 1
+        assert config.optional == 2
+        assert config.envvar == "value"
 
 
 def test_config_envvar_missing(reg: Registry) -> None:
