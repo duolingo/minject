@@ -6,7 +6,7 @@ from typing import Any, DefaultDict, Dict, List, Optional, Type, TypeVar
 from attr import define, field
 from packaging import version
 
-from duolingo_base.registry import inject
+from minject import inject
 
 _T = TypeVar("_T")
 _P = TypeVar("_P")

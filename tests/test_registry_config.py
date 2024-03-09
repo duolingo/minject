@@ -4,9 +4,9 @@ from unittest import mock
 import pytest
 
 from duolingo_base import registry
-from duolingo_base.registry import inject
-from duolingo_base.registry.inject import _RegistryConfig
-from duolingo_base.registry.registry import Registry
+from minject import inject
+from minject.inject import _RegistryConfig
+from minject.registry import Registry
 
 
 @inject.bind(

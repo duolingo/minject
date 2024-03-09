@@ -2,7 +2,7 @@ import unittest
 from typing import Sequence
 
 import tests.util.test_registry_helpers as helpers
-from duolingo_base.registry.inject import (
+from minject.inject import (
     _RegistryConfig,
     _RegistryFunction,
     _RegistryNestedConfig,
@@ -11,9 +11,9 @@ from duolingo_base.registry.inject import (
     define,
     reference,
 )
-from duolingo_base.registry.metadata import RegistryMetadata
-from duolingo_base.registry.mock import mock
-from duolingo_base.registry.model import Resolvable
+from minject.metadata import RegistryMetadata
+from minject.mock import mock
+from minject.model import Resolvable
 from duolingo_base.util import registry
 
 

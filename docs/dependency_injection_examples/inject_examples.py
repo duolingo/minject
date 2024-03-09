@@ -1,5 +1,5 @@
 # Add imports
-from duolingo_base.registry import Registry, inject
+from minject import Registry, inject
 
 registry = Registry()
 

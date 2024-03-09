@@ -2,7 +2,7 @@
 
 In this guide, you can learn about dependency injection and the `duoling_base.registry` module.
 
-To see a working example of `duolingo_base.registry`, see the [Quick Start](#quick-start) section.
+To see a working example of `minject`, see the [Quick Start](#quick-start) section.
 
 To learn what dependency injection is, and how you can use it in your projects,
 see the [Fundamentals](#fundamentals) section.
@@ -10,7 +10,7 @@ see the [Fundamentals](#fundamentals) section.
 # Quick Start
 
 This section shows you how to create a script that
-uses `duolingo_base.registry` to instantiate objects
+uses `minject` to instantiate objects
 through dependency injection.
 
 ## Set Up Your Environment
@@ -72,7 +72,7 @@ is a library that provides a mechanism that allows a programmer to instantiate
 objects through dependency injection in a specific programming language or
 technology stack.
 
-At Duolingo, we use `duolingo_base.registry` as our dependency injection framework
+At Duolingo, we use `minject` as our dependency injection framework
 when using Python.
 
 # Understand the Value of Dependency Injection
@@ -145,7 +145,7 @@ app = registry[ApplicationManager]
 
 # Use Dependency Injection
 
-To use dependency injection through `duolingo_base.registry`, you must
+To use dependency injection through `minject`, you must
 perform the following actions:
 
 1. Create a `Registry` instance
@@ -313,12 +313,12 @@ https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddc
 > **Note**
 > A common use case of `inject.function` is parsing a configuration string into a
 > type-safe object. To learn more about using configuration values with
-> the `duolingo_base.registry` framework, see the
+> the `minject` framework, see the
 > [Use Config Parameters](#use-config-parameters) section.
 
 # Storing Instantiated Classes
 
-When you instantiate a class with the `duolingo_base.registry` framework,
+When you instantiate a class with the `minject` framework,
 the framework stores your instantiated class as the value in a key value
 pair.
 
@@ -342,7 +342,7 @@ section.
 
 # Dependency Injection and Flask
 
-In this section, you can learn how to use `duolingo_base.registry` with the `Flask` web framework.
+In this section, you can learn how to use `minject` with the `Flask` web framework.
 
 ## Use Config Parameters
 
@@ -456,9 +456,9 @@ class MyView(FlaskView):
 
 # Testing Dependency Injection enabled Code
 
-You can test code that uses `duolingo_base.registry` exactly as
-you would test code that does not use `duolingo_base.registry`.
-This is because no features of `duolingo_base.registry` change
+You can test code that uses `minject` exactly as
+you would test code that does not use `minject`.
+This is because no features of `minject` change
 the API or behavior of classes in your code.
 
 For example, say you use the following class in your application:
@@ -469,7 +469,7 @@ You can test this class with the `pytest` like this:
 
 https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/test.py#L4-L7
 
-## Instantiate Mock Objects `duolingo_base.registry`
+## Instantiate Mock Objects `minject`
 
 To instantiate an instance of a class with mock constructor arguments
 specified by your dependency resolution definitions, use the `mock` function.
