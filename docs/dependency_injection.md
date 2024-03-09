@@ -411,49 +411,6 @@ def get_phrase(self):
     return phrases.get_phrase(request.args['name'])
 ```
 
-## Thread Safety
-
-The `Registry` object is not thread safe, and you should not access
-it in threaded sections of your code. This means that you should not
-use the `Registry` to instantiate objects in a function decorated with
-`@app.route`, or in any function called from a function decorated with
-`@app.route`.
-
-> **Important**
-> Ensure you resolve all dependency resolution definitions with your
-> `Registry` instance at application startup. Your `Registry` instance
-> resolves a dependency resolution definition the first time you perform
-> a dictionary lookup with the key containing that dependency
-> resolution on your `Registry` instance.
-
-To use a `Registry` instance in a `Flask` route, use **class-based views**.
-Class-based views are a feature of the `duolingo_base` library that allow
-you to add state to your route handlers.
-
-The following code-snippet shows how to use an object constructed through a
-`Registry` instance within a `Flask` route in a thread safe manner:
-
-<!-- Untested code snippet -->
-
-```python
-from flask import current_app
-from application import MyClass
-from duolingo_base.view import FlaskView, View
-
-@inject.bind(
-    argument = "dependencies shmapendencies"
-)
-class MyView(FlaskView):
-    def __init__(self, argument) -> None:
-        super().__init__()
-        self.class_instance = current_app.registry[MyClass]
-        self.argument = argument
-
-    @View.route("/message", methods=["GET"])
-    def get_message(self) -> str:
-        return f"{self.class_instance.message} {self.argument}!"
-```
-
 # Testing Dependency Injection enabled Code
 
 You can test code that uses `minject` exactly as
