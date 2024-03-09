@@ -10,7 +10,7 @@ this is a primitive form of Dependency Injection or a Service Locator.
 
 To use the registry, treat it as a dict to which you pass class types:
 
-from duolingo_base import registry
+from minject import registry
 my_registry = registry.initialize()
 api = my_registry[MyApi]
 

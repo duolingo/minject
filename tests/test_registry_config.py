@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from duolingo_base import registry
+from minject import registry
 from minject import inject
 from minject.inject import _RegistryConfig
 from minject.registry import Registry
