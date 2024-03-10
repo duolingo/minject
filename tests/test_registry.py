@@ -158,13 +158,13 @@ class RegistryTestCase(unittest.TestCase):
             path="/index.html",
             server=reference(helpers.Server, url="http://example.com"),
         )
-        duo = self.registry[Resource]
+        resource = self.registry[Resource]
 
-        self.assertEqual("/index.html", duo.path)
-        self.assertIsNotNone(duo.server)
-        self.assertEqual("http://example.com", duo.server.url)
-        self.assertIsNot(index, duo)
-        self.assertIsNot(index.server, duo.server)
+        self.assertEqual("/index.html", resource.path)
+        self.assertIsNotNone(resource.server)
+        self.assertEqual("http://example.com", resource.server.url)
+        self.assertIsNot(index, resource)
+        self.assertIsNot(index.server, resource.server)
 
     def test_nonbound_abstract(self) -> None:
         client = self.registry[helpers.MyApiClient]
