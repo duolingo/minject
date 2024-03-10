@@ -3,8 +3,7 @@ from unittest import mock
 
 import pytest
 
-from minject import registry
-from minject import inject
+from minject import inject, registry
 from minject.inject import _RegistryConfig
 from minject.registry import Registry
 

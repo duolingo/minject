@@ -8,13 +8,15 @@ from minject.inject import (
     _RegistryNestedConfig,
     _RegistryReference,
     bind,
+    config,
     define,
+    function,
     reference,
+    self_tag,
 )
 from minject.metadata import RegistryMetadata
 from minject.mock import mock
 from minject.model import Resolvable
-from minject.inject import bind, define, reference, function, config, self_tag
 from minject.registry import initialize
 
 
@@ -210,9 +212,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual(((1,), {"a": "b"}), func_simple.call(self.registry))
 
         self.registry.config.from_dict({"arg0": "val0", "value": "val_name"})
-        func_config = function(
-            helpers.passthrough, config("arg0"), name=config("value")
-        )
+        func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
         self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(self.registry))
 
         func_nested = function(helpers.passthrough, function(helpers.nested, 2))
@@ -222,9 +222,7 @@ class RegistryTestCase(unittest.TestCase):
         func_ref = function(helpers.passthrough, other=reference(other))
         self.assertEqual(((), {"other": self.registry[other]}), func_ref.call(self.registry))
 
-        func_factory: _RegistryFunction[str] = function(
-            "create", reference(helpers.Factory), 1
-        )
+        func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
         self.assertEqual("1", func_factory.call(self.registry))
 
     def test_mock(self) -> None:
