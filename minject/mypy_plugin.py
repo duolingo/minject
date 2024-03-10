@@ -16,8 +16,8 @@ class RegistryMypyPlugin(Plugin):
     I do not fully understand what these hooks do. This is just copying
     these sections of the mypy source code:
 
-    decorator 1: https://github.com/python/mypy/blob/a6bd80ed8c91138ce6112b5ce71fc406d426cd01/mypy/plugins/default.py#L132-L138
-    decorator 2: https://github.com/python/mypy/blob/a6bd80ed8c91138ce6112b5ce71fc406d426cd01/mypy/plugins/default.py#L159-L162
+    decorator 1: https://github.com/python/mypy/blob/15d20ea3cd049322e45868871619fdb744266ef6/mypy/plugins/default.py#L132-L138
+    decorator 2: https://github.com/python/mypy/blob/15d20ea3cd049322e45868871619fdb744266ef6/mypy/plugins/default.py#L159-L162
     """
 
     def get_class_decorator_hook(self, fullname: str):

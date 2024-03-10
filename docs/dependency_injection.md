@@ -22,10 +22,10 @@ python3 -m venv .pyenv
 source .pyenv/bin/activate
 ```
 
-Next, import `duolingo-base`:
+Next, import `minject`:
 
 ```console
-pip install --index-url https://pypi.duolingo.com/simple duolingo-base
+pip install minject
 ```
 
 Next, create a file named `serve.py`:
@@ -38,24 +38,24 @@ touch serve.py
 
 First, import the classes and modules you need to use dependency injection:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L1-L2
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/quick_start.py#L1-L2
 
 Next, intialize an instance of the `Registry` class:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L4-L5
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/quick_start.py#L4-L5
 
 Next, create your classes. Use the `inject.bind` function to specify how your `Registry`
 instance should instantiate each of your classes:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L7-L29
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/quick_start.py#L7-L29
 
 Use your `Registry` instance to instantiate your class:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L32-L33
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/quick_start.py#L32-L33
 
 Call a method of your instantiated class:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/quick_start.py#L35-L39
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/quick_start.py#L35-L39
 
 To view the entire script, click the link in any of the preceding code snippets.
 
@@ -195,7 +195,7 @@ You must pass arguments to your class' constructor as keyword arguments to
 
 The following code shows how to use `inject.bind`:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L7-L21
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_examples.py#L7-L21
 
 ### Understand `inject.define`
 
@@ -204,7 +204,7 @@ with which a `Registry` can instantiate a class.
 
 The following code shows how to use `inject.define`:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L24-L36
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_examples.py#L24-L36
 
 ## Understand `inject_define` and `inject_field`
 
@@ -229,7 +229,7 @@ Use `inject_define` and `inject_field` to reduce the code duplication that occur
 from using `inject.bind`. For example, let's say you want to specify the following dependency
 resolution definitions for two classes, `Adult` and `Child`:
 
-https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L30-L40
+https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L30-L40
 
 Notice that you must reference the keyword argument to which the dependency resolution definitions correspond three times in each class:
 
@@ -240,7 +240,7 @@ Notice that you must reference the keyword argument to which the dependency reso
 You can refactor the preceding code with `inject_field` and `inject_define` to reduce
 code duplication as follows:
 
-https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L46-L54
+https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L46-L54
 
 ### Typing
 
@@ -250,7 +250,7 @@ to be type checked by `mypy`.
 To add the plugin to `mypy`, add the following code snippet to your
 `mypy.ini` or `setup.cfg` file:
 
-https://github.com/duolingo/python-duolingo-base/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/mypy.ini#L1-L2
+https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/mypy.ini#L1-L2
 
 ## Instantiate Objects through Dependency Resolution with Your `Registry`
 
@@ -295,7 +295,7 @@ definition. `inject.reference` receives as an argument either a class that conta
 
 The following code snippet shows how to use `inject.reference`:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L39-L63
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_examples.py#L39-L63
 
 ## Understand `inject.function`
 
@@ -308,7 +308,7 @@ arguments which may or may not contain dependency resolution definitions.
 
 The following code snippet shows how to use `inject.function`:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/inject_examples.py#L66-L90
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_examples.py#L66-L90
 
 > **Note**
 > A common use case of `inject.function` is parsing a configuration string into a
@@ -420,11 +420,11 @@ the API or behavior of classes in your code.
 
 For example, say you use the following class in your application:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/class_for_test.py#L7-L19
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/class_for_test.py#L7-L19
 
 You can test this class with the `pytest` like this:
 
-https://github.com/duolingo/python-duolingo-base/blob/0e6732d19897b766b482981ddca00336f05c32e0/docs/dependency_injection_examples/test.py#L4-L7
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/test.py#L4-L7
 
 ## Instantiate Mock Objects `minject`
 
@@ -433,13 +433,13 @@ specified by your dependency resolution definitions, use the `mock` function.
 
 For example, say you have the following classes in your application:
 
-https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L1-L23
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/mock_examples.py#L1-L23
 
 To instantiate an instance of the `Child` class with mock constructor arguments
 corresponding to your dependency resolution definitions, use the `mock`
 function as follows:
 
-https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L25-L31
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/mock_examples.py#L25-L31
 
 If you would like to instantiate your class with mocks other than
 `MagicMock`, pass a mocking function. A mocking function is a
@@ -449,4 +449,4 @@ returns your desired mock object.
 The following code snippet shows how to pass a mocking function to the
 `mock` function:
 
-https://github.com/duolingo/python-duolingo-base/blob/f0959952d659f0dc033babb73224f03b43df24c9/docs/dependency_injection_examples/mock_examples.py#L39-L49
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/mock_examples.py#L39-L49
