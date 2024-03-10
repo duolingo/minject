@@ -226,7 +226,7 @@ Use `inject_define` and `inject_field` to reduce the code duplication that occur
 from using `inject.bind`. For example, let's say you want to specify the following dependency
 resolution definitions for two classes, `Adult` and `Child`:
 
-https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L30-L40
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_define.py#L30-L40
 
 Notice that you must reference the keyword argument to which the dependency resolution definitions correspond three times in each class:
 
@@ -237,7 +237,7 @@ Notice that you must reference the keyword argument to which the dependency reso
 You can refactor the preceding code with `inject_field` and `inject_define` to reduce
 code duplication as follows:
 
-https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/inject_define.py#L46-L54
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/inject_define.py#L46-L54
 
 ### Typing
 
@@ -247,7 +247,7 @@ to be type checked by `mypy`.
 To add the plugin to `mypy`, add the following code snippet to your
 `mypy.ini` or `setup.cfg` file:
 
-https://github.com/duolingo/minject/blob/b017ef5f8a39d722280c5eadd53ab00899b3ed28/docs/dependency_injection_examples/mypy.ini#L1-L2
+https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef6/docs/dependency_injection_examples/mypy.ini#L1-L2
 
 ## Instantiate Objects through Dependency Resolution with Your `Registry`
 
