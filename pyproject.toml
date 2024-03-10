@@ -1,0 +1,46 @@
+[project]
+name = "minject"
+description = "A small dependency injection library for Python."
+classifiers=['Development Status :: 4 - Beta']
+dynamic = ["version"]
+authors = [{name = "Matt McHenry", email = "mmchenry@duolingo.com"}, {name = "Service Framework Team", email = "service-framework-team@duolingo.com"}]
+requires-python = ">=3.7"
+
+dependencies = [
+    "attrs>=17.4",
+    "typing_extensions>=4.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "minject/__init__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+    # Developer dependencies. E.g. for testing, building, packaging, etc.
+    "coverage",
+    "mypy",
+    "pre-commit",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
+    "typing",
+]
+
+[tool.hatch.envs.test.scripts]
+coverage = '''pytest \
+    --cov=minject \
+    --verbose \
+    --junitxml=results.xml \
+    --cov-report=term \
+    --cov-report=xml:cobertura.xml \
+    --cov-report=html
+'''
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.7", "3.10"]
