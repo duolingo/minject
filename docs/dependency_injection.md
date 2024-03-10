@@ -1,6 +1,6 @@
 # Dependency Injection
 
-In this guide, you can learn about dependency injection and the `duoling_base.registry` module.
+In this guide, you can learn about dependency injection and the `minject` package.
 
 To see a working example of `minject`, see the [Quick Start](#quick-start) section.
 
