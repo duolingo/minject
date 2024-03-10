@@ -72,9 +72,6 @@ is a library that provides a mechanism that allows a programmer to instantiate
 objects through dependency injection in a specific programming language or
 technology stack.
 
-At Duolingo, we use `minject` as our dependency injection framework
-when using Python.
-
 # Understand the Value of Dependency Injection
 
 Dependency injection is valuable for the following reasons:

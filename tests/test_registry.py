@@ -151,16 +151,16 @@ class RegistryTestCase(unittest.TestCase):
         self.assertIsNot(index, search)
         self.assertIs(index.server, search.server)
 
-        DuolingoResource = define(
+        Resource = define(
             helpers.AbstractResource,
             path="/index.html",
-            server=reference(helpers.Server, url="http://duolingo.com"),
+            server=reference(helpers.Server, url="http://example.com"),
         )
-        duo = self.registry[DuolingoResource]
+        duo = self.registry[Resource]
 
         self.assertEqual("/index.html", duo.path)
         self.assertIsNotNone(duo.server)
-        self.assertEqual("http://duolingo.com", duo.server.url)
+        self.assertEqual("http://example.com", duo.server.url)
         self.assertIsNot(index, duo)
         self.assertIsNot(index.server, duo.server)
 
