@@ -7,7 +7,6 @@ repos:
         language: system
         files: ^minject/.*
   - repo: https://github.com/duolingo/pre-commit-hooks.git
-    rev: 1.7.0
+    rev: 1.7.3
     hooks:
       - id: duolingo
-        exclude: config.yaml
