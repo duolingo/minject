@@ -404,10 +404,6 @@ def nested_config(
 
     Returns:
         A reference to the config value that will be lazy-loaded.
-
-    See Also:
-        duolingo_base.config.Config.get_nested: The non-registry, non-lazy-loaded equivalent of
-            this method
     """
     return _RegistryNestedConfig(keys, default)
 

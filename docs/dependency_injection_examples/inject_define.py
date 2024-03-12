@@ -1,9 +1,9 @@
 from abc import ABC
 from typing import Tuple, Type
 
-from duolingo_base.registry import inject
-from duolingo_base.registry.inject_attrs import inject_define, inject_field
-from duolingo_base.registry.registry import Registry
+from minject import inject
+from minject.inject_attrs import inject_define, inject_field
+from minject.registry import Registry
 
 
 class AbstractAdult(ABC):
