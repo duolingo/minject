@@ -1,8 +1,8 @@
 from attr import field
 
-from duolingo_base.registry.inject import bind
-from duolingo_base.registry.inject_attrs import inject_define, inject_field
-from duolingo_base.registry.registry import Registry
+from minject.inject import bind
+from minject.inject_attrs import inject_define, inject_field
+from minject.registry import Registry
 
 
 def test_registry_instantiation() -> None:

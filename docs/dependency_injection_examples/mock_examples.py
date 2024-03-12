@@ -1,4 +1,4 @@
-from duolingo_base.registry import inject
+from minject import inject
 
 
 @inject.bind(name="Douglas")
@@ -22,7 +22,7 @@ class Child:
         self.parent.buy_car_for_child()
 
 
-from duolingo_base.registry.mock import mock
+from minject.mock import mock
 
 mocked = mock(Child)
 mocked.parent.print_name.assert_not_called()

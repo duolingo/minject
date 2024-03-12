@@ -1,3 +1,1 @@
---index-url https://pypi.duolingo.com/simple
-
-duolingo-base==1.8.2
+minject

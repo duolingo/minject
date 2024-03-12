@@ -8,7 +8,7 @@ they will all be in the `__main__` module instead of the expected
 
 import abc
 
-from duolingo_base.registry import inject
+from minject import inject
 
 
 @inject.bind(name=inject.reference("name"))
