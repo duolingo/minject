@@ -309,9 +309,7 @@ https://github.com/duolingo/minject/blob/15d20ea3cd049322e45868871619fdb744266ef
 
 > **Note**
 > A common use case of `inject.function` is parsing a configuration string into a
-> type-safe object. To learn more about using configuration values with
-> the `minject` framework, see the
-> [Use Config Parameters](#use-config-parameters) section.
+> type-safe object.
 
 # Storing Instantiated Classes
 
@@ -336,77 +334,6 @@ section.
 > On the first instantiation of your class, your `Registry` instance uses the
 > dependency resolution definitions contained in the you passed to
 > instantiate your class.
-
-# Dependency Injection and Flask
-
-In this section, you can learn how to use `minject` with the `Flask` web framework.
-
-## Use Config Parameters
-
-To use parameters from the `YAML` files in your `config/` directory in
-your dependency resolution definitions,
-use the `inject.config` and `inject.nested_config` functions.
-
-The `inject.config` function allows you to access a value in a `YAML` config file, and does not support [dot notation](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/Basics#dot_notation)
-for object traversal. The `inject.nested_config`
-function allows you to access a value in a `YAML` config file, and does
-support dot notation for object traversal.
-
-For example lets, say your `config/prod.yml` file contains the following
-snippet of `YAML` code:
-
-```yaml
-nested:
-  value: i am nested
-
-flat_value: i am flat
-```
-
-You can access the preceding values defined `config/prod.yml` in a
-dependency resolution definition as follows:
-
-<!-- untested -->
-
-```python
-inject.bind(
-    flat_value = inject.config("flat_value")
-    nested_value = inject.nested_config("nested.value")
-)
-class MyClass:
-    ...
-```
-
-## Global Registry Instance
-
-To access a `Registry` instance throughout your application, store an
-intialized `Registry` instance in the `flask.current_app` object.
-
-The following code snippet shows how to attach a `Registry` instance
-to a `Flask` application:
-
-<!-- Code snippets in this section are from previous documentation -->
-
-```python
-app = flask.application()
-app.registry = registry.initialize()
-```
-
-The following code snippet shows how to retrieve the `Registry` instance
-in the view layer of your application:
-
-> **Warning**
-> The following code snippet contains a bug related to thread safety.
-> To learn what this bug is and how to fix it, see the [Thread Safety](#thread-safety)
-> section of this guide.
-
-```python
-from flask import current_app
-
-@app.route('/phrase')
-def get_phrase(self):
-    phrases = current_app.registry[PhraseList]
-    return phrases.get_phrase(request.args['name'])
-```
 
 # Testing Dependency Injection enabled Code
 
