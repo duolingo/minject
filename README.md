@@ -7,8 +7,8 @@ ignore. We follow a few guiding principles to accomplish this:
 
 - **Minimize boilerplate**: Adding dependency injection to a class should
   require as little extra code as possible. Adding or changing a dependency of
-  a class should ideally only take one line. Make the common use case as
-  simple as possible.
+  a class should ideally only take one line. Make the common use case
+  simple.
 - **Be obvious**: Keep the dependency injection pieces close to the code it
   works on. Don't separate it into a different file that's hard to discover
   Someone who's never seen Minject annotations before should immediately know
