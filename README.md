@@ -2,8 +2,8 @@
 
 ## Philosophy
 
-`minject` aims to be easy to use, easy to understand, and easy to ignore. To
-accomplish this we follow the these principles:
+`minject` is a dependency injection tool that aims to be easy to use, easy to understand, and easy to ignore. To
+accomplish this we follow these principles:
 
 - **Minimize boilerplate**: Adding dependency injection to a class should
   require as little extra code as possible. You can add or change a dependency
@@ -16,7 +16,7 @@ accomplish this we follow the these principles:
 
 Here's an [example](docs/examples/philosophy.py) to demonstrate:
 
-```
+```python
 import minject
 
 @minject.define
@@ -28,9 +28,13 @@ class Car:
     engine: Engine = minject.field(binding=minject.inject.reference(Engine))
 ```
 
-There isn't much boilerplate: one call to `@minject.define` to mark a class for
-injection, and one `minject.field()` to annotate what it depends on. Likewise,
-these annotations clearly show `minject` is involved and provide a starting
-point for learning more. Finally, if need to use this class without `minject`
-you can simply call `my_car = Car(my_engine)` and it will work how you'd
+
+This code follows the preceding principles in the following ways:
+
+- There isn't much boilerplate: one call to `@minject.define` to mark a class for
+injection, and one `minject.field()` to annotate what it depends on.
+- These annotations clearly show `minject` is involved and provide a starting
+point for learning more.
+- If you need to use this class without `minject`
+you can call `my_car = Car(my_engine)` and it will work how you'd
 expect without any hidden magic.
