@@ -28,13 +28,12 @@ class Car:
     engine: Engine = minject.field(binding=minject.inject.reference(Engine))
 ```
 
-
 This code follows the preceding principles in the following ways:
 
 - There isn't much boilerplate: one call to `@minject.define` to mark a class for
-injection, and one `minject.field()` to annotate what it depends on.
+  injection, and one `minject.field()` to annotate what it depends on.
 - These annotations clearly show `minject` is involved and provide a starting
-point for learning more.
+  point for learning more.
 - If you need to use this class without `minject`
-you can call `my_car = Car(my_engine)` and it will work how you'd
-expect without any hidden magic.
+  you can call `my_car = Car(my_engine)` and it will work how you'd
+  expect without any hidden magic.
