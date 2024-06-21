@@ -47,9 +47,12 @@ something = registry['something_i_need']
 __version__ = "0.1.0"
 
 from . import inject
+from .inject_attrs import inject_define as define, inject_field as field
 from .registry import Registry, initialize
 
 __all__ = [
+    "define",
+    "field",
     "inject",
     "initialize",
     "Registry",
