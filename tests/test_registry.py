@@ -1,4 +1,8 @@
 import unittest
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import cache
+
 from typing import Sequence
 
 import tests.test_registry_helpers as helpers
@@ -457,6 +461,26 @@ class RegistryTestCase(unittest.TestCase):
 
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
+
+    def test_concurrent_lazy_init(self):
+        num_queries = 1000
+        query_per_class = 2
+        num_classes = num_queries // query_per_class
+
+        @cache
+        def new_type(i):
+            return type(f"NewType{i}", (), {})
+
+        def lazy_load_object(i):
+            return self.registry[new_type(i % num_classes)]
+
+        with ThreadPoolExecutor(max_workers=query_per_class) as executor:
+            futures = [executor.submit(lazy_load_object, i) for i in range(num_queries)]
+            results = [future.result() for future in as_completed(futures)]
+
+        # group results by object id, and assert that each type is only instantiated once
+        conuter = Counter(map(id, results))
+        assert all(count == query_per_class for count in conuter.values())
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
