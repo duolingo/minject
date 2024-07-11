@@ -280,7 +280,7 @@ class Registry(Resolver):
         """Get an object from the registry by a key.
 
         Parameters:
-            key: a string, type, or RegistryDefinition that will be usedgf
+            key: a string, type, or RegistryDefinition that will be used
                 to find (or construct) the desired object.
             default: the value to return if the object is not found.
                 if default is registry.AUTO_OR_NONE then the registry will
