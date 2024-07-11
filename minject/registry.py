@@ -1,16 +1,25 @@
 """The Registry itself is a runtime collection of initialized classes."""
-
+import functools
 import importlib
 import logging
-from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+
+from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast, Callable, Any
 
 from .config import RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
+from threading import RLock
+
+# TODO: remove the temporary flags to demonstrate thread safety patch
+TEST_LAZY_INIT_RACE_CONDITION = True
+SYNCHRONIZE_LAZY_INIT = False
+from time import sleep
+
 LOG = logging.getLogger(__name__)
 
 T = TypeVar("T")
+R = TypeVar('R')
 
 
 class _AutoOrNone:
@@ -70,6 +79,18 @@ class Registry(Resolver):
 
         self._config = RegistryConfigWrapper()
 
+        self._lock = RLock()
+
+    @staticmethod
+    def _synchronized(func: Callable[..., R]) -> Callable[..., R]:
+        """Decorator to synchronize method access with a reentrant lock."""
+        @functools.wraps(func)
+        def wrapper(self: 'Registry', *args: Any, **kwargs: Any) -> R:
+            with SYNCHRONIZE_LAZY_INIT and self._lock:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
     @property
     def config(self) -> RegistryConfigWrapper:
         return self._config
@@ -109,8 +130,9 @@ class Registry(Resolver):
                 # call the object's close method, if defined
                 wrapper.close()
 
+    @_synchronized
     def register(
-        self, obj: T, name: Optional[str] = None, interfaces: Optional[Iterable[type]] = None
+            self, obj: T, name: Optional[str] = None, interfaces: Optional[Iterable[type]] = None
     ) -> None:
         """Register a new object for discovery.
 
@@ -136,8 +158,9 @@ class Registry(Resolver):
                 obj_list = self._by_iface.setdefault(iface, [])
                 obj_list.append(wrapper)
 
+    @_synchronized
     def _set_by_metadata(
-        self, meta: RegistryMetadata[T], obj: T, _global: bool = True
+            self, meta: RegistryMetadata[T], obj: T, _global: bool = True
     ) -> RegistryWrapper[T]:
         wrapper = RegistryWrapper(obj, meta)
 
@@ -154,8 +177,9 @@ class Registry(Resolver):
 
         return wrapper
 
+    @_synchronized
     def _remove_by_metadata(
-        self, meta: RegistryMetadata[T], wrapper: RegistryWrapper[T], _global: bool = True
+            self, meta: RegistryMetadata[T], wrapper: RegistryWrapper[T], _global: bool = True
     ) -> None:
         if _global:
             self._objects.remove(wrapper)
@@ -169,6 +193,7 @@ class Registry(Resolver):
                 if obj_list:
                     obj_list.remove(wrapper)
 
+    @_synchronized
     def _register_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
         LOG.debug("registering %s", meta)
 
@@ -194,8 +219,9 @@ class Registry(Resolver):
 
         return wrapper
 
+    @_synchronized
     def _get_by_metadata(
-        self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
+            self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
     ) -> Optional[RegistryWrapper[T]]:
         """
         Get a registered object by metadata.
@@ -213,15 +239,21 @@ class Registry(Resolver):
                 return self._by_meta[meta]
 
         if default is AUTO_OR_NONE:
+
+            if TEST_LAZY_INIT_RACE_CONDITION:
+                sleep(0)
+
             return self._register_by_metadata(meta)
         elif default is not None:
             return RegistryWrapper(cast(T, default))
         else:
             return None
 
+    @_synchronized
     def __len__(self) -> int:
         return len(self._objects)
 
+    @_synchronized
     def __contains__(self, key) -> bool:
         """Check if an object is contained in the registry.
         Note that this method returns True if the object has already been
@@ -243,8 +275,9 @@ class Registry(Resolver):
         else:
             raise KeyError(f"invalid key for Registry: {key!r}")
 
+    @_synchronized
     def get(
-        self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
+            self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
     ) -> Optional[T]:
         """Get an object from the registry by a key.
 
@@ -274,7 +307,6 @@ class Registry(Resolver):
             if _get_meta(key, include_bases=False) is not None:
                 return _unwrap(self._get_by_metadata(meta, default))
 
-            # TODO: we need to lock!!!!
             obj_list = self._by_iface.get(key)
             if obj_list:
                 return _unwrap(obj_list[0])
