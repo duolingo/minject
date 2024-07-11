@@ -242,7 +242,7 @@ class Registry(Resolver):
         if default is AUTO_OR_NONE:
 
             if TEST_LAZY_INIT_RACE_CONDITION:
-                sleep(0)
+                sleep(0) # force context switch
 
             return self._register_by_metadata(meta)
         elif default is not None:
@@ -280,7 +280,7 @@ class Registry(Resolver):
         """Get an object from the registry by a key.
 
         Parameters:
-            key: a string, type, or RegistryDefinition that will be used
+            key: a string, type, or RegistryDefinition that will be usedgf
                 to find (or construct) the desired object.
             default: the value to return if the object is not found.
                 if default is registry.AUTO_OR_NONE then the registry will
