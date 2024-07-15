@@ -3,8 +3,6 @@ import functools
 import importlib
 import logging
 from threading import RLock
-
-# TODO: remove the temporary flags to demonstrate thread safety patch
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from .config import RegistryConfigWrapper, RegistrySubConfig
