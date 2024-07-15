@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from .config import RegistryConfigWrapper, RegistrySubConfig
+from .config import RegistryConfig, RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
@@ -24,10 +24,10 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize() -> "Registry":
+def initialize(config : Optional[RegistryConfig] = None) -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
-    return Registry()
+    return Registry(config)
 
 
 def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
@@ -62,13 +62,15 @@ class RegistryWrapper(Generic[T]):
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
-    def __init__(self):
+    def __init__(self, config: Optional[RegistryConfig] = None):
         self._objects: List[RegistryWrapper] = []
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
-
         self._config = RegistryConfigWrapper()
+        
+        if config is not None:
+            self._config._from_dict(config)
 
     @property
     def config(self) -> RegistryConfigWrapper:
