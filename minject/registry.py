@@ -64,6 +64,17 @@ class RegistryWrapper(Generic[T]):
             self._closed = True
 
 
+def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator to synchronize method access with a reentrant lock."""
+
+    @functools.wraps(func)
+    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
+        with self._lock:
+            return func(self, *args, **kwargs)
+
+    return wrapper
+
+
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
@@ -76,17 +87,6 @@ class Registry(Resolver):
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
-
-    @staticmethod
-    def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
-        """Decorator to synchronize method access with a reentrant lock."""
-
-        @functools.wraps(func)
-        def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
-            with self._lock:
-                return func(self, *args, **kwargs)
-
-        return wrapper
 
     @property
     def config(self) -> RegistryConfigWrapper:

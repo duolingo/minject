@@ -1,8 +1,7 @@
 import unittest
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import cache
-from itertools import chain
+from functools import lru_cache
 from random import shuffle
 from typing import Sequence
 
@@ -520,7 +519,7 @@ class RegistryTestCase(unittest.TestCase):
         query_per_class = 2
         num_classes = num_queries // query_per_class
 
-        @cache
+        @lru_cache(maxsize=None)
         def new_type(i):
             return type(f"NewType{i}", (), {})
 
