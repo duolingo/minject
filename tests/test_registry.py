@@ -463,7 +463,7 @@ class RegistryTestCase(unittest.TestCase):
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
 
-    def test_concurrent_registration(self):
+    def test_concurrent_registration(self) -> None:
         n_objects = 1000
         n_objects_per_key = 10
         n_keys = n_objects // n_objects_per_key
@@ -484,7 +484,7 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual(n_objects // n_objects_per_key, len(self.registry._by_name))
         self.assertEqual(n_objects, len(self.registry._by_iface))
 
-    def test_concurrent_get_while_registering(self):
+    def test_concurrent_get_while_registering(self) -> None:
         """
         The registry should be able to handle concurrent get and register operations
         """
@@ -499,19 +499,20 @@ class RegistryTestCase(unittest.TestCase):
 
         n_objects = 1000
 
-        operations = list(
-            chain(
-                zip([register_object] * n_objects, range(n_objects)),
-                zip([get_object] * n_objects, range(n_objects)),
-            )
-        )
+        # randomly interleave register and get operations for testing concurrent read+write
+        register_object_ops = list(zip([register_object] * n_objects, range(n_objects)))
+        get_object_ops = list(zip([get_object] * n_objects, range(n_objects)))
+        operations = register_object_ops + get_object_ops
         shuffle(operations)
 
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(op, i) for op, i in operations]
             [future.result() for future in as_completed(futures)]
 
-    def test_concurrent_lazy_init(self):
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry._by_name))
+
+    def test_concurrent_lazy_init(self) -> None:
         """
         Test lazy initialization of singletons in a concurrent environment always returns the same object
         """
@@ -530,9 +531,10 @@ class RegistryTestCase(unittest.TestCase):
             futures = [executor.submit(lazy_load_object, i) for i in range(num_queries)]
             results = [future.result() for future in as_completed(futures)]
 
-        # group results by object id, and assert that each type is only instantiated once
-        conuter = Counter(map(id, results))
-        assert all(count == query_per_class for count in conuter.values())
+        # group results by object id, and assert that each type is only instantiated once If each type is
+        # instantiated only once but accessed N times, we would see N objects for each type in the counter.
+        counter = Counter(map(id, results))
+        assert all(count == query_per_class for count in counter.values())
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to

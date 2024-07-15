@@ -5,6 +5,8 @@ import logging
 from threading import RLock
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
+from typing_extensions import ParamSpec
+
 from .config import RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
@@ -13,6 +15,7 @@ LOG = logging.getLogger(__name__)
 
 T = TypeVar("T")
 R = TypeVar("R")
+P = ParamSpec("P")
 
 
 class _AutoOrNone:
@@ -75,7 +78,7 @@ class Registry(Resolver):
         self._lock = RLock()
 
     @staticmethod
-    def _synchronized(func: Callable[..., R]) -> Callable[..., R]:
+    def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
         """Decorator to synchronize method access with a reentrant lock."""
 
         @functools.wraps(func)
