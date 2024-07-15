@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from .config import RegistryConfigWrapper, RegistryConfiguration, RegistrySubConfig
+from .config import CONFIG_NAMESPACE, RegistryConfigWrapper, RegistryConfiguration, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
@@ -84,7 +84,7 @@ class Registry(Resolver):
         return resolve_value(self, value)
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self._config.get("registry")
+        registry_config: Optional[RegistrySubConfig] = self.config.get(CONFIG_NAMESPACE)
         if registry_config:
             autostart = registry_config.get("autostart")
             if autostart:

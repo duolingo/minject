@@ -180,7 +180,7 @@ class RegistryTestCase(unittest.TestCase):
 
         self.registry.config._from_dict(
             {
-                "registry": {
+                "minject": {
                     "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
                     "by_name": {
                         "border_red": {"width": "2px"},
@@ -397,8 +397,8 @@ class RegistryTestCase(unittest.TestCase):
         mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
-        self.registry.config._from_dict(
-            {"registry": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
+        self.registry.config.from_dict(
+            {"minject": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
         )
 
         self.registry.start()
