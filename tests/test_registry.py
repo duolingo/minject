@@ -179,15 +179,15 @@ class RegistryTestCase(unittest.TestCase):
         DottedBorder.name = "border_dotted"
 
         self.registry.config._from_dict(
+
             {
-                "minject": {
-                    "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
-                    "by_name": {
-                        "border_red": {"width": "2px"},
-                        "border_dotted": {"style": "dotted"},
-                    },
-                }
+                "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
+                "by_name": {
+                    "border_red": {"width": "2px"},
+                    "border_dotted": {"style": "dotted"},
+                },
             }
+            
         )
 
         border = self.registry[helpers.Border]
@@ -397,16 +397,16 @@ class RegistryTestCase(unittest.TestCase):
         mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
-        self.registry.config.from_dict(
-            {"minject": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
-        )
 
-        self.registry.start()
+        config = {"autostart": ["tests.test_registry_helpers.FakeWorker"]}
+        
+        registry = initialize(config = config)
+        registry.start()
         self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
         self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
         self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
-        self.registry.close()
+        registry.close()
         self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
     def test_self(self) -> None:

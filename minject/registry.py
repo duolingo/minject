@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from .config import CONFIG_NAMESPACE, RegistryConfigWrapper, RegistryConfiguration, RegistrySubConfig
+from .config import RegistryConfigWrapper, RegistryConfiguration, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
@@ -24,10 +24,10 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize() -> "Registry":
+def initialize(config = Optional[RegistryConfiguration]) -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
-    return Registry()
+    return Registry(config = config)
 
 
 def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
@@ -84,11 +84,9 @@ class Registry(Resolver):
         return resolve_value(self, value)
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self.config.get(CONFIG_NAMESPACE)
-        if registry_config:
-            autostart = registry_config.get("autostart")
-            if autostart:
-                return (_resolve_import(value) for value in autostart)
+        autostart = self.config.get("autostart")
+        if autostart:
+            return (_resolve_import(value) for value in autostart)
         return ()
 
     def start(self) -> None:
