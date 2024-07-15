@@ -5,16 +5,11 @@ import logging
 from threading import RLock
 
 # TODO: remove the temporary flags to demonstrate thread safety patch
-from time import sleep
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from .config import RegistryConfigWrapper, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
-
-TEST_LAZY_INIT_RACE_CONDITION = True
-SYNCHRONIZE_LAZY_INIT = False
-
 
 LOG = logging.getLogger(__name__)
 
@@ -87,10 +82,7 @@ class Registry(Resolver):
 
         @functools.wraps(func)
         def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
-            if SYNCHRONIZE_LAZY_INIT:
-                with self._lock:
-                    return func(self, *args, **kwargs)
-            else:
+            with self._lock:
                 return func(self, *args, **kwargs)
 
         return wrapper
@@ -245,9 +237,6 @@ class Registry(Resolver):
                 return self._by_meta[meta]
 
         if default is AUTO_OR_NONE:
-            if TEST_LAZY_INIT_RACE_CONDITION:
-                sleep(0)  # force context switch
-
             return self._register_by_metadata(meta)
         elif default is not None:
             return RegistryWrapper(cast(T, default))
