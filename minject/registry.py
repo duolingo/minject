@@ -279,6 +279,7 @@ class Registry(Resolver):
         else:
             raise KeyError(f"invalid key for Registry: {key!r}")
 
+    @_synchronized
     def get(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
     ) -> Optional[T]:
