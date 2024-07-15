@@ -180,13 +180,11 @@ class RegistryTestCase(unittest.TestCase):
 
         registry = initialize(
             {
-                "registry": {
                     "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
                     "by_name": {
                         "border_red": {"width": "2px"},
                         "border_dotted": {"style": "dotted"},
                     },
-                }
             }
         )
 
@@ -398,7 +396,7 @@ class RegistryTestCase(unittest.TestCase):
 
     def test_autostart(self) -> None:
         registry = initialize(
-            {"registry": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
+            {"autostart": ["tests.test_registry_helpers.FakeWorker"]}
         )
 
         registry.start()
