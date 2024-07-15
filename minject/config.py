@@ -70,27 +70,25 @@ class RegistryConfigWrapper:
         """Get init kwargs configured for a given RegistryMetadata."""
         result: Dict[str, Any] = {}
 
-        reg_conf: Optional[RegistrySubConfig] = self._impl
-        if reg_conf:
-            by_class = reg_conf.get("by_class")
-            if by_class and meta._cls:
-                # first apply config for the class name
-                cls_name = meta._cls.__name__
-                kwargs = by_class.get(cls_name)
-                if kwargs:
-                    result.update(kwargs)
+        by_class = self._impl.get("by_class")
+        if by_class and meta._cls:
+            # first apply config for the class name
+            cls_name = meta._cls.__name__
+            kwargs = by_class.get(cls_name)
+            if kwargs:
+                result.update(kwargs)
 
-                # then apply config for the fully qualified class name
-                cls_module = f"{meta._cls.__module__}.{cls_name}"
-                kwargs = by_class.get(cls_module)
-                if kwargs:
-                    result.update(kwargs)
+            # then apply config for the fully qualified class name
+            cls_module = f"{meta._cls.__module__}.{cls_name}"
+            kwargs = by_class.get(cls_module)
+            if kwargs:
+                result.update(kwargs)
 
-            # finally apply config for the object by name
-            by_name = reg_conf.get("by_name")
-            if by_name and meta._name:
-                kwargs = by_name.get(meta._name)
-                if kwargs:
-                    result.update(kwargs)
+        # finally apply config for the object by name
+        by_name = self._impl.get("by_name")
+        if by_name and meta._name:
+            kwargs = by_name.get(meta._name)
+            if kwargs:
+                result.update(kwargs)
 
         return result

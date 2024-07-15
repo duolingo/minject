@@ -83,11 +83,9 @@ class Registry(Resolver):
         return resolve_value(self, value)
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self.config
-        if registry_config:
-            autostart = registry_config.get("autostart")
-            if autostart:
-                return (_resolve_import(value) for value in autostart)
+        autostart = self.config.get("autostart")
+        if autostart:
+            return (_resolve_import(value) for value in autostart)
         return ()
 
     def start(self) -> None:
