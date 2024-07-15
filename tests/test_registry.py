@@ -2,7 +2,8 @@ import unittest
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import cache
-
+from itertools import chain
+from random import shuffle
 from typing import Sequence
 
 import tests.test_registry_helpers as helpers
@@ -462,7 +463,60 @@ class RegistryTestCase(unittest.TestCase):
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
 
+    def test_concurrent_registration(self):
+        n_objects = 1000
+        n_objects_per_key = 10
+
+        def register_object(i):
+            obj = object()
+            self.registry.register(obj, name=f"obj_{i % n_objects_per_key}")
+            return i
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(register_object, i) for i in range(n_objects)]
+            results = [future.result() for future in as_completed(futures)]
+
+        # assert that the registry is in a consistent state
+        self.assertEqual(len(results), n_objects)
+        self.assertEqual(len(self.registry), n_objects)
+        self.assertEqual(len(self.registry._by_name), n_objects // n_objects_per_key)
+        self.assertEqual(len(self.registry._by_meta), n_objects // n_objects_per_key)
+        self.assertEqual(len(self.registry._by_iface), n_objects // n_objects_per_key)
+
+        for i in range(n_objects):
+            self.assertIn(f"obj_{i}", self.registry)
+
+    def test_concurrent_get_while_registering(self):
+        """
+        The registry should be able to handle concurrent get and register operations
+        """
+
+        def register_object(i):
+            obj = object()
+            self.registry.register(obj, name=f"obj_{i}")
+            return i
+
+        def get_object(i):
+            return self.registry.get(f"obj_{i}")
+
+        n_objects = 1000
+
+        operations = list(
+            chain(
+                zip([register_object] * n_objects, range(n_objects)),
+                zip([get_object] * n_objects, range(n_objects)),
+            )
+        )
+        shuffle(operations)
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(op, i) for op, i in operations]
+            [future.result() for future in as_completed(futures)]
+
     def test_concurrent_lazy_init(self):
+        """
+        Test lazy initialization of singletons in a concurrent environment always returns the same object
+        """
         num_queries = 1000
         query_per_class = 2
         num_classes = num_queries // query_per_class
