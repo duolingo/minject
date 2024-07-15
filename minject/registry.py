@@ -62,13 +62,17 @@ class RegistryWrapper(Generic[T]):
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
-    def __init__(self):
+    def __init__(self, config: Optional[RegistryConfigWrapper] = None) -> None:
         self._objects: List[RegistryWrapper] = []
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
+        
+        self._config = config
+        if config is None:
+            self._config = RegistryConfigWrapper()
 
-        self._config = RegistryConfigWrapper()
+
 
     @property
     def config(self) -> RegistryConfigWrapper:
@@ -81,7 +85,7 @@ class Registry(Resolver):
         return resolve_value(self, value)
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self.config.get("registry")
+        registry_config: Optional[RegistrySubConfig] = self._config.get("registry")
         if registry_config:
             autostart = registry_config.get("autostart")
             if autostart:

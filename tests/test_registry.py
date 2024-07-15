@@ -178,7 +178,7 @@ class RegistryTestCase(unittest.TestCase):
         DottedBorder = define(helpers.Border)
         DottedBorder.name = "border_dotted"
 
-        self.registry.config.from_dict(
+        self.registry.config._from_dict(
             {
                 "registry": {
                     "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
@@ -211,7 +211,7 @@ class RegistryTestCase(unittest.TestCase):
         func_simple = function(helpers.passthrough, 1, a="b")
         self.assertEqual(((1,), {"a": "b"}), func_simple.call(self.registry))
 
-        self.registry.config.from_dict({"arg0": "val0", "value": "val_name"})
+        self.registry.config._from_dict({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
         self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(self.registry))
 
@@ -397,7 +397,7 @@ class RegistryTestCase(unittest.TestCase):
         mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
-        self.registry.config.from_dict(
+        self.registry.config._from_dict(
             {"registry": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
         )
 

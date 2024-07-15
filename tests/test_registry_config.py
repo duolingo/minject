@@ -31,7 +31,7 @@ def fixture_reg() -> Registry:
 
 
 def test_config_simple(reg: Registry) -> None:
-    reg.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2, "ENVVAR": 3})
+    reg.config._from_dict({"REQUIRED": 1, "OPTIONAL": 2, "ENVVAR": 3})
 
     config = reg[Configable]
     assert config.required == 1
@@ -40,14 +40,14 @@ def test_config_simple(reg: Registry) -> None:
 
 
 def test_config_required(reg: Registry) -> None:
-    reg.config.from_dict({"OPTIONAL": 2, "ENVVAR": 3})
+    reg.config._from_dict({"OPTIONAL": 2, "ENVVAR": 3})
 
     with pytest.raises(KeyError):
         _ = reg[Configable]
 
 
 def test_config_optional(reg: Registry) -> None:
-    reg.config.from_dict({"REQUIRED": 1, "ENVVAR": 3})
+    reg.config._from_dict({"REQUIRED": 1, "ENVVAR": 3})
 
     config = reg[Configable]
     assert config.required == 1
@@ -56,7 +56,7 @@ def test_config_optional(reg: Registry) -> None:
 
 
 def test_config_envvar(reg: Registry) -> None:
-    reg.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2})
+    reg.config._from_dict({"REQUIRED": 1, "OPTIONAL": 2})
 
     with mock.patch.dict("os.environ", {"ENVVAR": "value"}):
         config = reg[Configable]
@@ -66,14 +66,14 @@ def test_config_envvar(reg: Registry) -> None:
 
 
 def test_config_envvar_missing(reg: Registry) -> None:
-    reg.config.from_dict({"REQUIRED": 1, "OPTIONAL": 2})
+    reg.config._from_dict({"REQUIRED": 1, "OPTIONAL": 2})
 
     with pytest.raises(KeyError):
         _ = reg[Configable]
 
 
 def test_config_default_typing(reg: Registry) -> None:
-    reg.config.from_dict({"EXISTS": "exists"})
+    reg.config._from_dict({"EXISTS": "exists"})
     temp: _RegistryConfig[Optional[str]] = inject.config("DNE", None)
     assert temp.resolve(reg) is None
     temp = inject.config("EXISTS", None)
@@ -89,7 +89,7 @@ def test_config_default_typing(reg: Registry) -> None:
     ids=("dotted string", "string sequence"),
 )
 def test_nested_config(reg: Registry, nested_config_key: Any) -> None:
-    reg.config.from_dict({"top": {"middle": {"base": "value"}}})
+    reg.config._from_dict({"top": {"middle": {"base": "value"}}})
     NestedConfigable = inject.define(
         SingleConfigable, required=inject.nested_config(nested_config_key)
     )
@@ -103,7 +103,7 @@ def test_nested_config(reg: Registry, nested_config_key: Any) -> None:
     ids=("top level", "sub-item dotted", "sub-item sequence"),
 )
 def test_nested_config_key_dne(reg: Registry, nested_config_key: Any) -> None:
-    reg.config.from_dict({"EXISTS": "exists"})
+    reg.config._from_dict({"EXISTS": "exists"})
     NestedConfigable = inject.define(
         SingleConfigable, required=inject.nested_config(nested_config_key)
     )
@@ -117,7 +117,7 @@ def test_nested_config_key_dne(reg: Registry, nested_config_key: Any) -> None:
     ids=("top level", "sub-item dotted", "sub-item sequence"),
 )
 def test_nested_config_key_dne_with_default(reg: Registry, nested_config_key: Any) -> None:
-    reg.config.from_dict({"EXISTS": "exists"})
+    reg.config._from_dict({"EXISTS": "exists"})
     NestedConfigable = inject.define(
         SingleConfigable, required=inject.nested_config(nested_config_key, default="DEFAULT")
     )
