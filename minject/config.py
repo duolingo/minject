@@ -27,7 +27,9 @@ class RegistrySubConfig(TypedDict, total=False):
 class InternalRegistryConfig(TypedDict, total=False):
     registry: RegistrySubConfig
 
+
 RegistryConfig = Union[Dict[str, Any], InternalRegistryConfig]
+
 
 class RegistryConfigWrapper:
     """Manages the configuration of the registry."""

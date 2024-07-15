@@ -180,11 +180,11 @@ class RegistryTestCase(unittest.TestCase):
 
         registry = initialize(
             {
-                    "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
-                    "by_name": {
-                        "border_red": {"width": "2px"},
-                        "border_dotted": {"style": "dotted"},
-                    },
+                "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
+                "by_name": {
+                    "border_red": {"width": "2px"},
+                    "border_dotted": {"style": "dotted"},
+                },
             }
         )
 
@@ -395,9 +395,7 @@ class RegistryTestCase(unittest.TestCase):
         mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
-        registry = initialize(
-            {"autostart": ["tests.test_registry_helpers.FakeWorker"]}
-        )
+        registry = initialize({"autostart": ["tests.test_registry_helpers.FakeWorker"]})
 
         registry.start()
         self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))

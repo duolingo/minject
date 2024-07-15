@@ -24,7 +24,7 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize(config : Optional[RegistryConfig] = None) -> "Registry":
+def initialize(config: Optional[RegistryConfig] = None) -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
     return Registry(config)
@@ -68,7 +68,7 @@ class Registry(Resolver):
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
         self._config = RegistryConfigWrapper()
-        
+
         if config is not None:
             self._config._from_dict(config)
 
