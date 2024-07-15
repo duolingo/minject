@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 # Unbound, invariant type variable
 T = TypeVar("T")
+CONFIG_NAMESPACE = "minject"
 
 
 class RegistrySubConfig(TypedDict, total=False):
@@ -67,7 +68,7 @@ class RegistryConfigWrapper:
         """Get init kwargs configured for a given RegistryMetadata."""
         result: Dict[str, Any] = {}
 
-        reg_conf: Optional[RegistrySubConfig] = self._impl.get("registry")
+        reg_conf: Optional[RegistrySubConfig] = self._impl.get(CONFIG_NAMESPACE)
         if reg_conf:
             by_class = reg_conf.get("by_class")
             if by_class and meta._cls:
