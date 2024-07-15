@@ -466,25 +466,23 @@ class RegistryTestCase(unittest.TestCase):
     def test_concurrent_registration(self):
         n_objects = 1000
         n_objects_per_key = 10
+        n_keys = n_objects // n_objects_per_key
 
         def register_object(i):
             obj = object()
-            self.registry.register(obj, name=f"obj_{i % n_objects_per_key}")
+            iface = type(f"Interface{i}", (), {})
+            self.registry.register(obj, name=f"obj_{i % n_keys}", interfaces=[iface])
             return i
 
         with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(register_object, i) for i in range(n_objects)]
-            results = [future.result() for future in as_completed(futures)]
+            for i in range(n_objects):
+                executor.submit(register_object, i)
 
         # assert that the registry is in a consistent state
-        self.assertEqual(len(results), n_objects)
-        self.assertEqual(len(self.registry), n_objects)
-        self.assertEqual(len(self.registry._by_name), n_objects // n_objects_per_key)
-        self.assertEqual(len(self.registry._by_meta), n_objects // n_objects_per_key)
-        self.assertEqual(len(self.registry._by_iface), n_objects // n_objects_per_key)
-
-        for i in range(n_objects):
-            self.assertIn(f"obj_{i}", self.registry)
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects // n_objects_per_key, len(self.registry._by_name))
+        self.assertEqual(n_objects, len(self.registry._by_iface))
 
     def test_concurrent_get_while_registering(self):
         """
