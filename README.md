@@ -47,7 +47,7 @@ This code follows the preceding principles in the following ways:
   you can call `my_car = Car(my_engine)` and it will work how you'd
   expect without any hidden magic.
 
-### Documentations
+### Documentation
 
 - [Quick start](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
 - [Dependency Injection Fundamentals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
