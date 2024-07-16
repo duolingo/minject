@@ -1,5 +1,12 @@
 # minject
 
+![PyPI version](https://img.shields.io/pypi/v/minject)
+
+[**Philosophy**](#philosophy)
+| [**Quick Start**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
+| [**Dependency Injection Fundamentals**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
+| [**PyPI Homepage**](https://pypi.org/project/minject/)
+
 ## Philosophy
 
 `minject` is a dependency injection tool that aims to be easy to use, easy to understand, and easy to ignore. To
@@ -19,9 +26,11 @@ Here's an [example](docs/examples/philosophy.py) to demonstrate:
 ```python
 import minject
 
+
 @minject.define
 class Engine:
     cylinders: int = minject.field(binding=4)
+
 
 @minject.define
 class Car:
@@ -37,3 +46,25 @@ This code follows the preceding principles in the following ways:
 - If you need to use this class without `minject`
   you can call `my_car = Car(my_engine)` and it will work how you'd
   expect without any hidden magic.
+
+### Documentation
+
+- [Quick start](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
+- [Dependency Injection Fundamentals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
+- [Examples](https://github.com/duolingo/minject/tree/master/docs/dependency_injection_examples)
+
+### PyPI
+
+This library is available on PyPI ([Homepage](https://pypi.org/project/minject/))
+
+---
+
+<div>
+<div align="center">
+  <a href="https://careers.duolingo.com/">
+    <img src="https://github.com/user-attachments/assets/80a6153e-1d88-429b-9775-5baeb9281842" alt="Duolingo logo" width="200"/>
+    <br/>
+    <span>Duolingo Careers</span>
+  </a>
+</div>
+</div>
