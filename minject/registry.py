@@ -80,7 +80,7 @@ class Registry(Resolver):
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
-        
+
         if config is not None:
             self._config._from_dict(config)
 

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 from typing_extensions import TypedDict
 
@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 # Unbound, invariant type variable
 T = TypeVar("T")
-
 
 
 RegistryInitConfig = Dict[str, Any]
@@ -25,7 +24,7 @@ class RegistryConfigWrapper:
         """Configure the registry from a dictionary.
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator.
-        
+
         Parameters:
             config_dict: the configuration data to apply.
         """

@@ -90,6 +90,7 @@ def name(name_):
 
     return wrap
 
+
 # TODO(1.0): deprecated, not used
 def close_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
