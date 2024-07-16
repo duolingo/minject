@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeV
 
 from typing_extensions import ParamSpec
 
-from .config import CONFIG_NAMESPACE, RegistryConfigWrapper, RegistrySubConfig
+from .config import RegistryConfigWrapper, RegistryInitConfig, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
@@ -29,10 +29,10 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize() -> "Registry":
+def initialize(config: Optional[RegistryInitConfig] = None) -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
-    return Registry()
+    return Registry(config)
 
 
 def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
@@ -78,15 +78,17 @@ def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
-    def __init__(self):
+    def __init__(self, config: Optional[RegistryInitConfig] = None):
         self._objects: List[RegistryWrapper] = []
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
-
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
+        
+        if config is not None:
+            self._config._from_dict(config)
 
     @property
     def config(self) -> RegistryConfigWrapper:
@@ -99,11 +101,12 @@ class Registry(Resolver):
         return resolve_value(self, value)
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self.config.get(CONFIG_NAMESPACE)
-        if registry_config:
-            autostart = registry_config.get("autostart")
-            if autostart:
-                return (_resolve_import(value) for value in autostart)
+        # the autostart_default variable exists so that the
+        # autostart variable can be type hinted
+        autostart_default: Optional[Iterable[str]] = None
+        autostart = self.config.get(key="autostart", default=autostart_default)
+        if autostart:
+            return (_resolve_import(value) for value in autostart)
         return ()
 
     @_synchronized

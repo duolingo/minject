@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 # Unbound, invariant type variable
 T = TypeVar("T")
-CONFIG_NAMESPACE = "minject"
 
 
 class RegistrySubConfig(TypedDict, total=False):
@@ -29,13 +28,16 @@ class InternalRegistryConfig(TypedDict, total=False):
     registry: RegistrySubConfig
 
 
+RegistryInitConfig = Union[Dict[str, Any], InternalRegistryConfig]
+
+
 class RegistryConfigWrapper:
     """Manages the configuration of the registry."""
 
     def __init__(self):
         self._impl = {}
 
-    def from_dict(self, config_dict: Union[Dict[str, Any], InternalRegistryConfig]):
+    def _from_dict(self, config_dict: RegistryInitConfig):
         """Configure the registry from a dictionary.
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator. If the key 'registry'
@@ -68,27 +70,25 @@ class RegistryConfigWrapper:
         """Get init kwargs configured for a given RegistryMetadata."""
         result: Dict[str, Any] = {}
 
-        reg_conf: Optional[RegistrySubConfig] = self._impl.get(CONFIG_NAMESPACE)
-        if reg_conf:
-            by_class = reg_conf.get("by_class")
-            if by_class and meta._cls:
-                # first apply config for the class name
-                cls_name = meta._cls.__name__
-                kwargs = by_class.get(cls_name)
-                if kwargs:
-                    result.update(kwargs)
+        by_class = self._impl.get("by_class")
+        if by_class and meta._cls:
+            # first apply config for the class name
+            cls_name = meta._cls.__name__
+            kwargs = by_class.get(cls_name)
+            if kwargs:
+                result.update(kwargs)
 
-                # then apply config for the fully qualified class name
-                cls_module = f"{meta._cls.__module__}.{cls_name}"
-                kwargs = by_class.get(cls_module)
-                if kwargs:
-                    result.update(kwargs)
+            # then apply config for the fully qualified class name
+            cls_module = f"{meta._cls.__module__}.{cls_name}"
+            kwargs = by_class.get(cls_module)
+            if kwargs:
+                result.update(kwargs)
 
-            # finally apply config for the object by name
-            by_name = reg_conf.get("by_name")
-            if by_name and meta._name:
-                kwargs = by_name.get(meta._name)
-                if kwargs:
-                    result.update(kwargs)
+        # finally apply config for the object by name
+        by_name = self._impl.get("by_name")
+        if by_name and meta._name:
+            kwargs = by_name.get(meta._name)
+            if kwargs:
+                result.update(kwargs)
 
         return result
