@@ -1,6 +1,5 @@
 """The Registry itself is a runtime collection of initialized classes."""
 import functools
-import importlib
 import logging
 from threading import RLock
 from typing import Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast

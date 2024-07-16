@@ -177,7 +177,7 @@ class _RegistryFunction(Deferred[T_co]):
 
     def __init__(
         self,
-        func: Union[str, Callable[..., T_co]],
+        func: Callable[..., T_co],
         # TODO: Type with ParamSpec and Concatenate after those are supported by mypy.
         #    https://github.com/python/mypy/issues/10201
         *args: DeferredAny,
@@ -227,7 +227,7 @@ class _RegistryFunction(Deferred[T_co]):
 
 
 def function(
-    func: Union[str, Callable[..., T]], *args: DeferredAny, **kwargs: DeferredAny
+    func: Callable[..., T], *args: DeferredAny, **kwargs: DeferredAny
 ) -> _RegistryFunction[T]:
     """Bind a function to be run at init time.
     Parameters:
