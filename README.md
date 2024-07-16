@@ -51,7 +51,7 @@ This code follows the preceding principles in the following ways:
 ### Documentations
 
 - [Quick start](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
-- [Dependency Injection Fundamentatals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
+- [Dependency Injection Fundamentals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
 - [Examples](https://github.com/duolingo/minject/tree/master/docs/dependency_injection_examples)
 
 ### PyPI
