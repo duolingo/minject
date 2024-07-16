@@ -32,15 +32,5 @@ dependencies = [
     "typing",
 ]
 
-[tool.hatch.envs.test.scripts]
-coverage = '''pytest \
-    --cov=minject \
-    --verbose \
-    --junitxml=results.xml \
-    --cov-report=term \
-    --cov-report=xml:cobertura.xml \
-    --cov-report=html
-'''
-
-[[tool.hatch.envs.test.matrix]]
+[[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.7", "3.10"]
