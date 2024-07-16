@@ -3,8 +3,7 @@
 ![PyPI version](https://img.shields.io/pypi/v/minject)
 
 [**Philosophy**](#philosophy)
-| [**Quick Start**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
-| [**Dependency Injection Fundamentals**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
+| [**Documentation**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md)
 | [**PyPI Homepage**](https://pypi.org/project/minject/)
 
 ## Philosophy
@@ -50,8 +49,7 @@ This code follows the preceding principles in the following ways:
 ### Documentation
 
 - [Quick start](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
-- [Dependency Injection Fundamentals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
-- [Examples](https://github.com/duolingo/minject/tree/master/docs/dependency_injection_examples)
+- [Fundamentals](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
 
 ### PyPI
 
@@ -59,12 +57,10 @@ This library is available on PyPI ([Homepage](https://pypi.org/project/minject/)
 
 ---
 
-<div>
 <div align="center">
   <a href="https://careers.duolingo.com/">
     <img src="https://github.com/user-attachments/assets/80a6153e-1d88-429b-9775-5baeb9281842" alt="Duolingo logo" width="200"/>
-    <br/>
-    <span>Duolingo Careers</span>
   </a>
-</div>
+  <br/>
+  <i>Duolingo is hiring! Apply at <a href="https://www.duolingo.com/careers">https://www.duolingo.com/careers</a></i>
 </div>
