@@ -39,12 +39,6 @@ def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
     return wrapper.obj if wrapper else None
 
 
-def _resolve_import(value: str) -> RegistryKey:
-    module_name, var_name = value.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, var_name)
-
-
 class RegistryWrapper(Generic[T]):
     """Simple wrapper around registered objects for tracking."""
 
