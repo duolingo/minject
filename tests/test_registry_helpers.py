@@ -99,9 +99,6 @@ class FakeWorker:
         self._closed = True
 
 
-inject.close_method(FakeWorker, FakeWorker.close)
-
-
 def logic(registry_impl):
     return registry_impl
 

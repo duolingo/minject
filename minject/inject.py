@@ -76,32 +76,6 @@ def bind(
     return wrap
 
 
-# TODO(1.0): deprecated, not used
-def name(name_):
-    # type: (str) -> Callable[[Type[T]], Type[T]]
-    """Decorator to bind a registry name for a class."""
-
-    def wrap(cls):
-        # type: (Type[T]) -> Type[T]
-        """Decorate a class with a registry name."""
-        meta = _gen_meta(cls)
-        meta._name = name_
-        return cls
-
-    return wrap
-
-
-# TODO(1.0): deprecated, not used
-def close_method(cls, method):
-    # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry close function for a class."""
-    if isinstance(cls, RegistryMetadata):
-        meta = cls
-    else:
-        meta = _gen_meta(cls)
-    meta._close = method
-
-
 def define(
     base_class: Type[T],
     _name: Optional[str] = None,
