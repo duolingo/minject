@@ -40,16 +40,13 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
-def bind(
-    _name: Optional[str] = None, _close: None = None, **bindings: DeferredAny
-) -> Callable[[Type[T]], Type[T]]:
+def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Type[T]]:
     ...
 
 
 # Overload for when we _can_ infer what `T` will be from a call to bind.
 @overload
 def bind(
-    _name: Optional[str] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> Callable[[Type[T]], Type[T]]:
@@ -57,7 +54,6 @@ def bind(
 
 
 def bind(
-    _name=None,
     _close=None,
     **bindings,
 ):
@@ -66,8 +62,6 @@ def bind(
     def wrap(cls: Type[T]) -> Type[T]:
         """Decorate a class with registry bindings."""
         meta = _gen_meta(cls)
-        if _name:
-            meta._name = _name
         if _close:
             meta._close = _close
         meta.update_bindings(**bindings)
@@ -78,7 +72,6 @@ def bind(
 
 def define(
     base_class: Type[T],
-    _name: Optional[str] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> RegistryMetadata[T]:
@@ -89,7 +82,6 @@ def define(
         meta.update_bindings(**bindings)
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
-    meta._name = _name
     meta._close = _close
     return meta
 
@@ -167,7 +159,7 @@ def reference(key, **bindings):
     if not bindings:
         return _RegistryReference(key)
     elif isinstance(key, type):
-        return _RegistryReference(define(key, None, None, **bindings))
+        return _RegistryReference(define(key, None, **bindings))
     else:
         raise TypeError("inject.reference can only include bindings on classes")
 
