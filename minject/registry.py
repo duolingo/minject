@@ -3,9 +3,9 @@ import functools
 import importlib
 import logging
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from typing_extensions import ParamSpec
+from typing_extensions import Concatenate, ParamSpec
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
@@ -58,11 +58,13 @@ class RegistryWrapper(Generic[T]):
         self._closed = True
 
 
-def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
+def _synchronized(
+    func: Callable[Concatenate["Registry", P], R]
+) -> Callable[Concatenate["Registry", P], R]:
     """Decorator to synchronize method access with a reentrant lock."""
 
     @functools.wraps(func)
-    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
+    def wrapper(self: "Registry", *args: P.args, **kwargs: P.kwargs) -> R:
         with self._lock:
             return func(self, *args, **kwargs)
 
