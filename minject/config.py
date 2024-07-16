@@ -28,7 +28,7 @@ class InternalRegistryConfig(TypedDict, total=False):
     registry: RegistrySubConfig
 
 
-RegistryConfig = Union[Dict[str, Any], InternalRegistryConfig]
+RegistryInitConfig = Union[Dict[str, Any], InternalRegistryConfig]
 
 
 class RegistryConfigWrapper:
@@ -37,7 +37,7 @@ class RegistryConfigWrapper:
     def __init__(self):
         self._impl = {}
 
-    def _from_dict(self, config_dict: RegistryConfig):
+    def _from_dict(self, config_dict: RegistryInitConfig):
         """Configure the registry from a dictionary.
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator. If the key 'registry'
