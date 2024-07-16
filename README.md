@@ -4,8 +4,7 @@
 
 [**Philosophy**](#philosophy)
 | [**Quick Start**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#quick-start)
-| [**Dependency Injection Fundamentals
-**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
+| [**Dependency Injection Fundamentals**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md#fundamentals)
 | [**PyPI Homepage**](https://pypi.org/project/minject/)
 
 ## Philosophy
