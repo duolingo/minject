@@ -1,1 +1,32 @@
-.venv
+# compiled python code files and OS/editor temp files
+*.DS_Store
+.*.swp
+*~
+*.log
+
+# Terraform files and directories
+.terraform
+*.tfstate*
+
+# Ignore PyCharm/IntelliJ IDEA files
+/.idea/
+
+*.pyc
+
+# python virtualenv
+/.pyenv/
+/.venv/
+
+pylint.out
+.pytest_cache
+.mypy_cache
+
+# test/coverage/style reports
+/.coverage*
+/.profile
+/htmlcov/
+/cobertura.xml
+/coverage.xml
+/results.xml
+
+/lib/dist/
