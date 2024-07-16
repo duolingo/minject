@@ -111,8 +111,6 @@ class RegistryMetadata(Generic[T_co]):
         self._cls = cls
         self._bindings = bindings or {}
 
-        # unsure what _name is doing.
-
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
 
