@@ -11,24 +11,8 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class RegistrySubConfig(TypedDict, total=False):
-    """Configuration entries that apply to the registry itself."""
 
-    # A sequence of class names that should start at registry start time.
-    autostart: Sequence[str]
-    # Names of registry classes mapped to the kwarg dictionary that should be used to initialize
-    # the object of that type.
-    by_class: Mapping[str, Kwargs]
-    # Named registry entries that map to the kwarg dictionary that should be used to initialize
-    # the object for that name.
-    by_name: Mapping[str, Kwargs]
-
-
-class InternalRegistryConfig(TypedDict, total=False):
-    registry: RegistrySubConfig
-
-
-RegistryInitConfig = Union[Dict[str, Any], InternalRegistryConfig]
+RegistryInitConfig = Dict[str, Any]
 
 
 class RegistryConfigWrapper:
@@ -40,15 +24,8 @@ class RegistryConfigWrapper:
     def _from_dict(self, config_dict: RegistryInitConfig):
         """Configure the registry from a dictionary.
         The provided dictionary should contain general configuration that can
-        be accessed using the inject.config decorator. If the key 'registry'
-        is present in the dict, it will be used to configure the registry
-        itself. The following elements are recognized by the registry:
-            autostart: list of classes or names that the registry should
-                start by default.
-            by_class: dict of registry classes which map to a dict of
-                kwargs for initializing any object of that type.
-            by_name: dict of named registry entries which map to a dict of
-                kwargs for initializing that object.
+        be accessed using the inject.config decorator.
+        
         Parameters:
             config_dict: the configuration data to apply.
         """
@@ -65,30 +42,3 @@ class RegistryConfigWrapper:
         if item is None:
             raise KeyError(key)
         return item
-
-    def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
-        """Get init kwargs configured for a given RegistryMetadata."""
-        result: Dict[str, Any] = {}
-
-        by_class = self._impl.get("by_class")
-        if by_class and meta._cls:
-            # first apply config for the class name
-            cls_name = meta._cls.__name__
-            kwargs = by_class.get(cls_name)
-            if kwargs:
-                result.update(kwargs)
-
-            # then apply config for the fully qualified class name
-            cls_module = f"{meta._cls.__module__}.{cls_name}"
-            kwargs = by_class.get(cls_module)
-            if kwargs:
-                result.update(kwargs)
-
-        # finally apply config for the object by name
-        by_name = self._impl.get("by_name")
-        if by_name and meta._name:
-            kwargs = by_name.get(meta._name)
-            if kwargs:
-                result.update(kwargs)
-
-        return result

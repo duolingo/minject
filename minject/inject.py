@@ -41,7 +41,7 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
 def bind(
-    _name: Optional[str] = None, _start: None = None, _close: None = None, **bindings: DeferredAny
+    _name: Optional[str] = None, _close: None = None, **bindings: DeferredAny
 ) -> Callable[[Type[T]], Type[T]]:
     ...
 
@@ -50,7 +50,6 @@ def bind(
 @overload
 def bind(
     _name: Optional[str] = None,
-    _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> Callable[[Type[T]], Type[T]]:
@@ -59,7 +58,6 @@ def bind(
 
 def bind(
     _name=None,
-    _start=None,
     _close=None,
     **bindings,
 ):
@@ -70,8 +68,6 @@ def bind(
         meta = _gen_meta(cls)
         if _name:
             meta._name = _name
-        if _start:
-            meta._start = _start
         if _close:
             meta._close = _close
         meta.update_bindings(**bindings)
@@ -94,18 +90,6 @@ def name(name_):
 
     return wrap
 
-
-# TODO(1.0): deprecated, not used
-def start_method(cls, method):
-    # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry start function for a class."""
-    if isinstance(cls, RegistryMetadata):
-        meta = cls
-    else:
-        meta = _gen_meta(cls)
-    meta._start = method
-
-
 # TODO(1.0): deprecated, not used
 def close_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
@@ -120,7 +104,6 @@ def close_method(cls, method):
 def define(
     base_class: Type[T],
     _name: Optional[str] = None,
-    _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> RegistryMetadata[T]:
@@ -132,7 +115,6 @@ def define(
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
     meta._name = _name
-    meta._start = _start
     meta._close = _close
     return meta
 
@@ -210,7 +192,7 @@ def reference(key, **bindings):
     if not bindings:
         return _RegistryReference(key)
     elif isinstance(key, type):
-        return _RegistryReference(define(key, None, None, None, **bindings))
+        return _RegistryReference(define(key, None, None, **bindings))
     else:
         raise TypeError("inject.reference can only include bindings on classes")
 
