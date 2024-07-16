@@ -62,5 +62,5 @@ This library is available on PyPI ([Homepage](https://pypi.org/project/minject/)
     <img src="https://github.com/user-attachments/assets/80a6153e-1d88-429b-9775-5baeb9281842" alt="Duolingo logo" width="200"/>
   </a>
   <br/>
-  <i>Duolingo is hiring! Apply at <a>https://www.duolingo.com/careers</a></i>
+  <i>Duolingo is hiring! Apply at <a href="https://www.duolingo.com/careers">https://www.duolingo.com/careers</a></i>
 </div>
