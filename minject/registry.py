@@ -1,8 +1,11 @@
 """The Registry itself is a runtime collection of initialized classes."""
-
+import functools
 import importlib
 import logging
-from typing import Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from threading import RLock
+from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+
+from typing_extensions import ParamSpec
 
 from .config import RegistryConfigWrapper, RegistryInitConfig, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
@@ -11,6 +14,8 @@ from .model import RegistryKey, Resolvable, Resolver, resolve_value
 LOG = logging.getLogger(__name__)
 
 T = TypeVar("T")
+R = TypeVar("R")
+P = ParamSpec("P")
 
 
 class _AutoOrNone:
@@ -59,6 +64,17 @@ class RegistryWrapper(Generic[T]):
             self._closed = True
 
 
+def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator to synchronize method access with a reentrant lock."""
+
+    @functools.wraps(func)
+    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
+        with self._lock:
+            return func(self, *args, **kwargs)
+
+    return wrapper
+
+
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
@@ -69,6 +85,8 @@ class Registry(Resolver):
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
         self._config = RegistryConfigWrapper()
 
+        self._lock = RLock()
+        
         if config is not None:
             self._config._from_dict(config)
 
@@ -91,6 +109,7 @@ class Registry(Resolver):
             return (_resolve_import(value) for value in autostart)
         return ()
 
+    @_synchronized
     def start(self) -> None:
         """
         Call start if defined on all objects contained in the registry.
@@ -105,6 +124,7 @@ class Registry(Resolver):
                 # call the object's start method, if defined
                 wrapper.start()
 
+    @_synchronized
     def close(self) -> None:
         """Close all objects contained in the registry."""
         for wrapper in list(reversed(self._objects)):
@@ -112,6 +132,7 @@ class Registry(Resolver):
                 # call the object's close method, if defined
                 wrapper.close()
 
+    @_synchronized
     def register(
         self, obj: T, name: Optional[str] = None, interfaces: Optional[Iterable[type]] = None
     ) -> None:
@@ -139,6 +160,7 @@ class Registry(Resolver):
                 obj_list = self._by_iface.setdefault(iface, [])
                 obj_list.append(wrapper)
 
+    @_synchronized
     def _set_by_metadata(
         self, meta: RegistryMetadata[T], obj: T, _global: bool = True
     ) -> RegistryWrapper[T]:
@@ -157,6 +179,7 @@ class Registry(Resolver):
 
         return wrapper
 
+    @_synchronized
     def _remove_by_metadata(
         self, meta: RegistryMetadata[T], wrapper: RegistryWrapper[T], _global: bool = True
     ) -> None:
@@ -172,6 +195,7 @@ class Registry(Resolver):
                 if obj_list:
                     obj_list.remove(wrapper)
 
+    @_synchronized
     def _register_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
         LOG.debug("registering %s", meta)
 
@@ -197,6 +221,7 @@ class Registry(Resolver):
 
         return wrapper
 
+    @_synchronized
     def _get_by_metadata(
         self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
     ) -> Optional[RegistryWrapper[T]]:
@@ -222,6 +247,7 @@ class Registry(Resolver):
         else:
             return None
 
+    @_synchronized
     def __len__(self) -> int:
         return len(self._objects)
 
@@ -246,6 +272,7 @@ class Registry(Resolver):
         else:
             raise KeyError(f"invalid key for Registry: {key!r}")
 
+    @_synchronized
     def get(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
     ) -> Optional[T]:
@@ -277,7 +304,6 @@ class Registry(Resolver):
             if _get_meta(key, include_bases=False) is not None:
                 return _unwrap(self._get_by_metadata(meta, default))
 
-            # TODO: we need to lock!!!!
             obj_list = self._by_iface.get(key)
             if obj_list:
                 return _unwrap(obj_list[0])

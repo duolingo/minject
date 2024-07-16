@@ -1,4 +1,8 @@
 import unittest
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import lru_cache
+from random import shuffle
 from typing import Sequence
 
 import tests.test_registry_helpers as helpers
@@ -453,6 +457,79 @@ class RegistryTestCase(unittest.TestCase):
 
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
+
+    def test_concurrent_registration(self) -> None:
+        n_objects = 1000
+        n_objects_per_key = 10
+        n_keys = n_objects // n_objects_per_key
+
+        def register_object(i):
+            obj = object()
+            iface = type(f"Interface{i}", (), {})
+            self.registry.register(obj, name=f"obj_{i % n_keys}", interfaces=[iface])
+            return i
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for i in range(n_objects):
+                executor.submit(register_object, i)
+
+        # assert that the registry is in a consistent state
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects // n_objects_per_key, len(self.registry._by_name))
+        self.assertEqual(n_objects, len(self.registry._by_iface))
+
+    def test_concurrent_get_while_registering(self) -> None:
+        """
+        The registry should be able to handle concurrent get and register operations
+        """
+
+        def register_object(i):
+            obj = object()
+            self.registry.register(obj, name=f"obj_{i}")
+            return i
+
+        def get_object(i):
+            return self.registry.get(f"obj_{i}")
+
+        n_objects = 1000
+
+        # randomly interleave register and get operations for testing concurrent read+write
+        register_object_ops = list(zip([register_object] * n_objects, range(n_objects)))
+        get_object_ops = list(zip([get_object] * n_objects, range(n_objects)))
+        operations = register_object_ops + get_object_ops
+        shuffle(operations)
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(op, i) for op, i in operations]
+            [future.result() for future in as_completed(futures)]
+
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry._by_name))
+
+    def test_concurrent_lazy_init(self) -> None:
+        """
+        Test lazy initialization of singletons in a concurrent environment always returns the same object
+        """
+        num_queries = 1000
+        query_per_class = 2
+        num_classes = num_queries // query_per_class
+
+        @lru_cache(maxsize=None)
+        def new_type(i):
+            return type(f"NewType{i}", (), {})
+
+        def lazy_load_object(i):
+            return self.registry[new_type(i % num_classes)]
+
+        with ThreadPoolExecutor(max_workers=query_per_class) as executor:
+            futures = [executor.submit(lazy_load_object, i) for i in range(num_queries)]
+            results = [future.result() for future in as_completed(futures)]
+
+        # group results by object id, and assert that each type is only instantiated once If each type is
+        # instantiated only once but accessed N times, we would see N objects for each type in the counter.
+        counter = Counter(map(id, results))
+        assert all(count == query_per_class for count in counter.values())
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
