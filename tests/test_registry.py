@@ -203,12 +203,6 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual("black", border_dotted.color)
 
     def test_func(self) -> None:
-        # func = function(helpers.passthrough)
-        # self.assertEqual(((), {}), func.call(registry))
-
-        # func_simple = function(helpers.passthrough, 1, a="b")
-        # self.assertEqual(((1,), {"a": "b"}), func_simple.call(registry))
-
         registry = initialize({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
         self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(registry))
@@ -222,6 +216,12 @@ class RegistryTestCase(unittest.TestCase):
 
         func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
         self.assertEqual("1", func_factory.call(registry))
+
+        func = function(helpers.passthrough)
+        self.assertEqual(((), {}), func.call(registry))
+
+        func_simple = function(helpers.passthrough, 1, a="b")
+        self.assertEqual(((1,), {"a": "b"}), func_simple.call(registry))
 
     def test_mock(self) -> None:
         """Test canonical usage of mock"""
