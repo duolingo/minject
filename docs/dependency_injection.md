@@ -18,8 +18,8 @@ through dependency injection.
 Create and activate a virtual environment by running the following commands in your terminal:
 
 ```console
-python3 -m venv .pyenv
-source .pyenv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 Next, import `minject`:
