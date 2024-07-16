@@ -133,10 +133,8 @@ class Registry(Resolver):
 
         if _global:
             self._objects.append(wrapper)
-        if meta.name:
-            self._by_name[meta.name] = wrapper
-        else:
-            self._by_meta[meta] = wrapper
+
+        self._by_meta[meta] = wrapper
         if meta.interfaces:
             for iface in meta.interfaces:
                 obj_list = self._by_iface.setdefault(iface, [])
@@ -150,10 +148,8 @@ class Registry(Resolver):
     ) -> None:
         if _global:
             self._objects.remove(wrapper)
-        if meta.name:
-            del self._by_name[meta.name]
-        else:
-            del self._by_meta[meta]
+
+        del self._by_meta[meta]
         if meta.interfaces:
             for iface in meta.interfaces:
                 obj_list = self._by_iface.get(iface)
@@ -195,13 +191,8 @@ class Registry(Resolver):
             default: return value if meta has not been registered.
                 Use AUTO_OR_NONE to create the object when missing.
         """
-        # see if a metadata name is provided
-        if meta.name:
-            if meta.name in self._by_name:
-                return self._by_name[meta.name]
-        else:
-            if meta in self._by_meta:
-                return self._by_meta[meta]
+        if meta in self._by_meta:
+            return self._by_meta[meta]
 
         if default is AUTO_OR_NONE:
             return self._register_by_metadata(meta)

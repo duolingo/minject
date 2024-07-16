@@ -104,7 +104,6 @@ class RegistryMetadata(Generic[T_co]):
     def __init__(
         self,
         cls: Type[T_co],
-        name: Optional[str] = None,  # pylint: disable=redefined-outer-name
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
         key: Optional[Hashable] = None,
@@ -113,21 +112,11 @@ class RegistryMetadata(Generic[T_co]):
         self._bindings = bindings or {}
 
         # unsure what _name is doing.
-        # TODO(1.0): deprecated, not used
-        self._name = name
+
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
 
         self._key = key
-
-    @property
-    def name(self) -> Optional[str]:
-        """Get the name this object is stored as in the registry."""
-        return self._name
-
-    @name.setter
-    def name(self, name_: str) -> None:
-        self._name = name_
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -144,9 +133,7 @@ class RegistryMetadata(Generic[T_co]):
         return self._key
 
     def _gen_key(self):
-        return tuple(
-            itertools.chain((self._cls, self._name), (item for item in self._bindings.items()))
-        )
+        return tuple(itertools.chain((self._cls,), (item for item in self._bindings.items())))
 
     @property
     def bindings(self) -> Kwargs:
@@ -193,12 +180,12 @@ class RegistryMetadata(Generic[T_co]):
 
     def __str__(self) -> str:
         return "{} {}({})".format(
-            repr(self._name) if self._name else "(unnamed)",
+            repr(self.key) if self.key else "(no key)",
             self._cls.__name__,
             ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
         )
 
     def __repr__(self) -> str:
         return "<RegistryMetadata {} {}({})>".format(
-            repr(self._name) if self._name else "(unnamed)", self._cls.__name__, self._bindings
+            repr(self.key) if self.key else "(no key)", self._cls.__name__, self._bindings
         )
