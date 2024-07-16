@@ -57,12 +57,10 @@ This library is available on PyPI ([Homepage](https://pypi.org/project/minject/)
 
 ---
 
-<div>
 <div align="center">
   <a href="https://careers.duolingo.com/">
     <img src="https://github.com/user-attachments/assets/80a6153e-1d88-429b-9775-5baeb9281842" alt="Duolingo logo" width="200"/>
-    <br/>
-    <i>Duolingo is hiring! Apply at https://www.duolingo.com/careers</i>
   </a>
-</div>
+  <br/>
+  <i>Duolingo is hiring! Apply at <a>https://www.duolingo.com/careers</a></i>
 </div>
