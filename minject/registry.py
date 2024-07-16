@@ -3,7 +3,7 @@ import functools
 import importlib
 import logging
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from typing_extensions import ParamSpec
 
@@ -64,13 +64,21 @@ class RegistryWrapper(Generic[T]):
             self._closed = True
 
 
+# this lock is overly aggressive (locks all registry instances).
+# we don't think this will be an issue as we advocate for initializing
+# all registry objects at app start, and we aren't aware of multi-registry
+# use cases. If in the future this becomes a problem, we can refactor to
+# move the lock to the registry instance itself.
+_LOCK = RLock()
+
+
 def _synchronized(func: Callable[P, R]) -> Callable[P, R]:
     """Decorator to synchronize method access with a reentrant lock."""
 
     @functools.wraps(func)
-    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
-        with self._lock:
-            return func(self, *args, **kwargs)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        with _LOCK:
+            return func(*args, **kwargs)
 
     return wrapper
 
@@ -85,8 +93,6 @@ class Registry(Resolver):
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
         self._config = RegistryConfigWrapper()
 
-        self._lock = RLock()
-        
         if config is not None:
             self._config._from_dict(config)
 
