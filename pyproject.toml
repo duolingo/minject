@@ -48,3 +48,10 @@ dependencies = [
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.7", "3.10"]
+
+
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive minject"
+
+[[tool.hatch.envs.types.matrix]]
+python = ["3.7", "3.10"]
