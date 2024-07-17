@@ -1,7 +1,7 @@
 [project]
 name = "minject"
 description = "A small dependency injection library for Python."
-classifiers=['Development Status :: 5 - Production/Stable']
+classifiers = ['Development Status :: 5 - Production/Stable']
 dynamic = ["version"]
 authors = [{ name = "Matt McHenry", email = "mmchenry@duolingo.com" }, { name = "Alek Binion", email = "alek@duolingo.com" }, { name = "Xiyan Shao", email = "xiyan@duolingo.com"}, { name = "Service Framework Team", email = "service-framework-team@duolingo.com" }]
 requires-python = ">=3.7"
