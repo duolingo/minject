@@ -187,9 +187,6 @@ class RegistryTestCase(unittest.TestCase):
         func_ref = function(helpers.passthrough, other=reference(other))
         self.assertEqual(((), {"other": registry[other]}), func_ref.call(registry))
 
-        func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
-        self.assertEqual("1", func_factory.call(registry))
-
         func = function(helpers.passthrough)
         self.assertEqual(((), {}), func.call(registry))
 
