@@ -1,6 +1,8 @@
 # minject
 
 ![PyPI version](https://img.shields.io/pypi/v/minject)
+[![Unit Tests](https://github.com/duolingo/minject/actions/workflows/hatch_test.yml/badge.svg?branch=master)](https://github.com/duolingo/minject/actions/workflows/hatch_test.yml)
+[![Typing](https://github.com/duolingo/minject/actions/workflows/mypy.yml/badge.svg?branch=master)](https://github.com/duolingo/minject/actions/workflows/mypy.yml)
 
 [**Philosophy**](#philosophy)
 | [**Documentation**](https://github.com/duolingo/minject/blob/master/docs/dependency_injection.md)
