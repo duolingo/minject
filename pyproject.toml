@@ -1,9 +1,9 @@
 [project]
 name = "minject"
 description = "A small dependency injection library for Python."
-classifiers=['Development Status :: 4 - Beta']
+classifiers = ['Development Status :: 4 - Beta']
 dynamic = ["version"]
-authors = [{name = "Matt McHenry", email = "mmchenry@duolingo.com"}, {name = "Alek Binion", email = "alek@duolingo.com"}, {name = "Service Framework Team", email = "service-framework-team@duolingo.com"}]
+authors = [{ name = "Matt McHenry", email = "mmchenry@duolingo.com" }, { name = "Alek Binion", email = "alek@duolingo.com" }, { name = "Xiyan Shao", email = "xiyan@duolingo.com"}, { name = "Service Framework Team", email = "service-framework-team@duolingo.com" }]
 requires-python = ">=3.7"
 
 dependencies = [
@@ -30,6 +30,20 @@ dependencies = [
     "pytest-mock",
     "pytest-xdist",
     "typing",
+]
+
+[tool.hatch.envs.hatch-test]
+dependencies = [
+    # The default hatch-test dependencies are not compatible with Python 3.7, a version we want to test against. Hence
+    # we need to specify our own dependencies here.
+    # https://github.com/pypa/hatch/blob/3adae6c0dfd5c20dfe9bf6bae19b44a696c22a43/src/hatch/env/internal/test.py
+    "coverage[toml]",
+    'coverage-enable-subprocess',
+    'pytest',
+    'pytest-mock',
+    'pytest-randomly',
+    'pytest-rerunfailures',
+    'pytest-xdist[psutil]',
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
