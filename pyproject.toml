@@ -32,5 +32,8 @@ dependencies = [
     "typing",
 ]
 
+[tool.hatch.envs.hatch-test]
+template = "default"
+
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.7", "3.10"]
