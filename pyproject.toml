@@ -32,5 +32,10 @@ dependencies = [
     "typing",
 ]
 
+[tool.hatch.envs.hatch-test]
+dependencies= [
+    "coverage[toml] < 7.3.0"
+]
+
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.7", "3.10"]
