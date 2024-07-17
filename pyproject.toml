@@ -33,9 +33,17 @@ dependencies = [
 ]
 
 [tool.hatch.envs.hatch-test]
-template = "default"
-dependencies= [
-    "coverage[toml] < 7.3.0"
+dependencies = [
+    # The default hatch-test dependencies are not compatible with Python 3.7, a version we want to test against. Hence
+    # we need to specify our own dependencies here.
+    # https://github.com/pypa/hatch/blob/3adae6c0dfd5c20dfe9bf6bae19b44a696c22a43/src/hatch/env/internal/test.py
+    "coverage[toml] < 7.3.0",
+    'coverage-enable-subprocess==1.0',
+    'pytest~=8.1',
+    'pytest-mock~=3.12',
+    'pytest-randomly~=3.15',
+    'pytest-rerunfailures~=14.0',
+    'pytest-xdist[psutil]~=3.5',
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
