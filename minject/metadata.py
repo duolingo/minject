@@ -131,7 +131,8 @@ class RegistryMetadata(Generic[T_co]):
         return self._key
 
     def _gen_key(self):
-        return tuple(itertools.chain((self._cls,), (item for item in self._bindings.items())))
+        cls_and_bindings = (self._cls,) + tuple(self._bindings.items())
+        return cls_and_bindings
 
     @property
     def bindings(self) -> Kwargs:
