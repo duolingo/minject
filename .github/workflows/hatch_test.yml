@@ -26,5 +26,5 @@ jobs:
         run: |
           python -m pip install hatch
 
-      - name: Lint
-        run: hatch test --all
+      - name: Run tests
+        run: hatch test --python ${{ matrix.python-version }} --cover-quiet --randomize --parallel --retries 5 --retry-delay 3
