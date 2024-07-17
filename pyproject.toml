@@ -21,6 +21,7 @@ path = "minject/__init__.py"
 [tool.hatch.envs.default]
 dependencies = [
     # Developer dependencies. E.g. for testing, building, packaging, etc.
+    "coverage",
     "mypy",
     "pre-commit",
     "pylint",
