@@ -173,13 +173,7 @@ class RegistryMetadata(Generic[T_co]):
         return hash(self.key)
 
     def __str__(self) -> str:
-        return "{} {}({})".format(
-            repr(self.key) if self.key else "(no key)",
-            self._cls.__name__,
-            ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
-        )
+        return f"{self.key}"
 
     def __repr__(self) -> str:
-        return "<RegistryMetadata {} {}({})>".format(
-            repr(self.key) if self.key else "(no key)", self._cls.__name__, self._bindings
-        )
+        return f"<RegistryMetadata {self.key}>"
