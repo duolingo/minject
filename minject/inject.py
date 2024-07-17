@@ -186,10 +186,9 @@ class _RegistryFunction(Deferred[T_co]):
         kwargs = {}
         for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
-        return self.func(registry_impl)(*args, **kwargs)
+        return self.func()(*args, **kwargs)
 
-    def func(self, registry_impl: Resolver) -> Callable[..., T_co]:
-        del registry_impl  # unused
+    def func(self) -> Callable[..., T_co]:
         return self._func
 
     @property
