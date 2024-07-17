@@ -2,9 +2,9 @@ name: "hatch_test"
 
 on:
   push:
+    branches:
+      - master
   pull_request:
-    types:
-      - opened
   workflow_dispatch:
 
 jobs:
