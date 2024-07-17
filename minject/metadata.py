@@ -106,15 +106,12 @@ class RegistryMetadata(Generic[T_co]):
         cls: Type[T_co],
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
-        key: Optional[Hashable] = None,
     ):
         self._cls = cls
         self._bindings = bindings or {}
 
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
-
-        self._key = key
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -124,11 +121,9 @@ class RegistryMetadata(Generic[T_co]):
     @property
     def key(self) -> Hashable:
         """The unique identifier used by this registry object.
-        By default this is a combination of class and bindings.
+        This is a combination of class and bindings.
         """
-        if self._key is None:
-            self._key = self._gen_key()
-        return self._key
+        return self._gen_key()
 
     def _gen_key(self):
         cls_and_bindings = (self._cls,) + tuple(self._bindings.items())
