@@ -1,4 +1,4 @@
-name: "hatch_test"
+name: "Unit Tests"
 
 on:
   push:
