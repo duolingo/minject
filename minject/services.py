@@ -1,6 +1,20 @@
-# The @minject.service annotation adds dependency injection details to a class.
-
+# The @minject.service annotation simplifies dependency injection details.
+#
+# Based on the fields defined on a class, the service annotation will generate
+# the necessary minject metadata to define how to initialize the class. It also
+# generats a __init__ method for those fields if one is not already defined.
+#
+# Example:
+# ```
+# @minject.service
+# class Car:
+#     engine: Engine = minject.reference(Engine)
+# ```
+#
 # based heavily on the dataclasses.py module in the Python standard library
+# https://docs.python.org/3/library/dataclasses.html
+
+# original source:
 # https://github.com/python/cpython/blob/v3.11.9/Lib/dataclasses.py
 
 from .metadata import _gen_meta
@@ -68,6 +82,7 @@ def _get_field(cls, a_name, a_type):
 
 
 def _init_fn(fields):
+    # Create an __init__ function for the class based on the fields required.
     def service_init(self, **kwargs):
         # Set attributes based on the fields.
         for f in fields:
@@ -77,14 +92,6 @@ def _init_fn(fields):
 
 
 def _process_class(cls):
-    fields = {}
-
-    # TODO: support parameters?
-    # https://github.com/python/cpython/blob/v3.11.9/Lib/dataclasses.py#L902-L903
-
-    # TODO: support base classes?
-    # https://github.com/python/cpython/blob/v3.11.9/Lib/dataclasses.py#L905-L920
-
     # Annotations that are defined in this class (not in base
     # classes).  If __annotations__ isn't present, then this class
     # adds no new annotations.  We use this to compute fields that are
@@ -97,36 +104,16 @@ def _process_class(cls):
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = cls.__dict__.get("__annotations__", {})
-
-    # Now find fields in our class.  While doing so, validate some
-    # things, and set the default values (as class attributes) where
-    # we can.
     cls_fields = []
+    cls_annotations = cls.__dict__.get("__annotations__", {})
     for name, type in cls_annotations.items():
         cls_fields.append(_get_field(cls, name, type))
-
-    for f in cls_fields:
-        fields[f.name] = f
-
-        # If the class attribute (which is the default value for this
-        # field) exists and is of type 'Field', replace it with the
-        # real default.  This is so that normal class introspection
-        # sees a real default value, not a Field.
-        if isinstance(getattr(cls, f.name, None), Field):
-            # If there's no default, delete the class attribute.
-            # This happens if we specify field(repr=False), for
-            # example (that is, we specified a field object, but
-            # no default value).  Also if we're using a default
-            # factory.  The class attribute should not be set at
-            # all in the post-processed class.
-            delattr(cls, f.name)
 
     if "__init__" not in cls.__dict__:
         cls.__init__ = _init_fn(cls_fields)
 
     meta = _gen_meta(cls)
-    meta.update_bindings(**{f.name: f.binding for f in fields.values()})
+    meta.update_bindings(**{f.name: f.binding for f in cls_fields})
 
     return cls
 
