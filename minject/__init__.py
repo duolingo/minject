@@ -50,7 +50,7 @@ from . import inject
 from .inject import reference
 from .inject_attrs import inject_define as define, inject_field as field
 from .registry import Registry, initialize
-from .service import service
+from .services import service
 
 __all__ = [
     "define",
