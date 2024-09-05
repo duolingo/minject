@@ -1,4 +1,8 @@
 import unittest
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import lru_cache
+from random import shuffle
 from typing import Sequence
 
 import tests.test_registry_helpers as helpers
@@ -171,59 +175,23 @@ class RegistryTestCase(unittest.TestCase):
 
         self.assertEqual("http://localhost/myapi", client.get())
 
-    def test_config(self) -> None:
-        RedBorder = define(helpers.Border, color="red")
-        RedBorder.name = "border_red"
-
-        DottedBorder = define(helpers.Border)
-        DottedBorder.name = "border_dotted"
-
-        self.registry.config.from_dict(
-            {
-                "minject": {
-                    "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
-                    "by_name": {
-                        "border_red": {"width": "2px"},
-                        "border_dotted": {"style": "dotted"},
-                    },
-                }
-            }
-        )
-
-        border = self.registry[helpers.Border]
-        border_red = self.registry[RedBorder]
-        border_dotted = self.registry[DottedBorder]
-
-        self.assertEqual("1px", border.width)
-        self.assertEqual("2px", border_red.width)
-        self.assertEqual("1px", border_dotted.width)
-        self.assertEqual("solid", border.style)
-        self.assertEqual("solid", border_red.style)
-        self.assertEqual("dotted", border_dotted.style)
-        self.assertEqual("black", border.color)
-        self.assertEqual("red", border_red.color)
-        self.assertEqual("black", border_dotted.color)
-
     def test_func(self) -> None:
-        func = function(helpers.passthrough)
-        self.assertEqual(((), {}), func.call(self.registry))
-
-        func_simple = function(helpers.passthrough, 1, a="b")
-        self.assertEqual(((1,), {"a": "b"}), func_simple.call(self.registry))
-
-        self.registry.config.from_dict({"arg0": "val0", "value": "val_name"})
+        registry = initialize({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
-        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(self.registry))
+        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(registry))
 
         func_nested = function(helpers.passthrough, function(helpers.nested, 2))
-        self.assertEqual(((2,), {}), func_nested.call(self.registry))
+        self.assertEqual(((2,), {}), func_nested.call(registry))
 
         other = define(object)
         func_ref = function(helpers.passthrough, other=reference(other))
-        self.assertEqual(((), {"other": self.registry[other]}), func_ref.call(self.registry))
+        self.assertEqual(((), {"other": registry[other]}), func_ref.call(registry))
 
-        func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
-        self.assertEqual("1", func_factory.call(self.registry))
+        func = function(helpers.passthrough)
+        self.assertEqual(((), {}), func.call(registry))
+
+        func_simple = function(helpers.passthrough, 1, a="b")
+        self.assertEqual(((1,), {"a": "b"}), func_simple.call(registry))
 
     def test_mock(self) -> None:
         """Test canonical usage of mock"""
@@ -396,46 +364,27 @@ class RegistryTestCase(unittest.TestCase):
         mocked.a.upper.assert_called_once()
         mocked.b.upper.assert_not_called()
 
-    def test_autostart(self) -> None:
-        self.registry.config.from_dict(
-            {"minject": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
-        )
-
-        self.registry.start()
-        self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
-        self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
-        self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
-
-        self.registry.close()
-        self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
-
     def test_self(self) -> None:
         func_logic = function(helpers.logic, self_tag)
         self.assertEqual(self.registry, func_logic.call(self.registry))
 
-    def test_inherited_start_stop(self) -> None:
+    def test_inherited_stop(self) -> None:
         class Base:
             def __init__(self):
-                self.started: bool = False
                 self.closed: bool = False
-
-        def start(base: Base):
-            base.started = True
 
         def close(base: Base):
             base.closed = True
 
-        @bind(_start=start, _close=close)
+        @bind(_close=close)
         class Sub(Base):
             ...
 
         # Registry starts on initial lookup as part of the initiation process
         instance = self.registry[Sub]
-        assert instance.started == True
         assert instance.closed == False
         # Close the registry
         self.registry.close()
-        assert instance.started == True
         assert instance.closed == True
 
     def test_multiple_deferred_bindings(self) -> None:
@@ -457,6 +406,79 @@ class RegistryTestCase(unittest.TestCase):
 
         assert self.registry[MultipleBindings].foo.foo() == "foo"
         assert self.registry[MultipleBindings].bar.bar() == "bar"
+
+    def test_concurrent_registration(self) -> None:
+        n_objects = 1000
+        n_objects_per_key = 10
+        n_keys = n_objects // n_objects_per_key
+
+        def register_object(i):
+            obj = object()
+            iface = type(f"Interface{i}", (), {})
+            self.registry.register(obj, name=f"obj_{i % n_keys}", interfaces=[iface])
+            return i
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for i in range(n_objects):
+                executor.submit(register_object, i)
+
+        # assert that the registry is in a consistent state
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects // n_objects_per_key, len(self.registry._by_name))
+        self.assertEqual(n_objects, len(self.registry._by_iface))
+
+    def test_concurrent_get_while_registering(self) -> None:
+        """
+        The registry should be able to handle concurrent get and register operations
+        """
+
+        def register_object(i):
+            obj = object()
+            self.registry.register(obj, name=f"obj_{i}")
+            return i
+
+        def get_object(i):
+            return self.registry.get(f"obj_{i}")
+
+        n_objects = 1000
+
+        # randomly interleave register and get operations for testing concurrent read+write
+        register_object_ops = list(zip([register_object] * n_objects, range(n_objects)))
+        get_object_ops = list(zip([get_object] * n_objects, range(n_objects)))
+        operations = register_object_ops + get_object_ops
+        shuffle(operations)
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(op, i) for op, i in operations]
+            [future.result() for future in as_completed(futures)]
+
+        self.assertEqual(n_objects, len(self.registry))
+        self.assertEqual(n_objects, len(self.registry._by_name))
+
+    def test_concurrent_lazy_init(self) -> None:
+        """
+        Test lazy initialization of singletons in a concurrent environment always returns the same object
+        """
+        num_queries = 1000
+        query_per_class = 2
+        num_classes = num_queries // query_per_class
+
+        @lru_cache(maxsize=None)
+        def new_type(i):
+            return type(f"NewType{i}", (), {})
+
+        def lazy_load_object(i):
+            return self.registry[new_type(i % num_classes)]
+
+        with ThreadPoolExecutor(max_workers=query_per_class) as executor:
+            futures = [executor.submit(lazy_load_object, i) for i in range(num_queries)]
+            results = [future.result() for future in as_completed(futures)]
+
+        # group results by object id, and assert that each type is only instantiated once If each type is
+        # instantiated only once but accessed N times, we would see N objects for each type in the counter.
+        counter = Counter(map(id, results))
+        assert all(count == query_per_class for count in counter.values())
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to

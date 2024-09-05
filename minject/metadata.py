@@ -104,31 +104,14 @@ class RegistryMetadata(Generic[T_co]):
     def __init__(
         self,
         cls: Type[T_co],
-        name: Optional[str] = None,  # pylint: disable=redefined-outer-name
-        start: Optional[Callable[[T_co], None]] = None,
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
-        key: Optional[Hashable] = None,
     ):
         self._cls = cls
         self._bindings = bindings or {}
 
-        # TODO(1.0): deprecated, not used
-        self._name = name
-        self._start = start
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
-
-        self._key = key
-
-    @property
-    def name(self) -> Optional[str]:
-        """Get the name this object is stored as in the registry."""
-        return self._name
-
-    @name.setter
-    def name(self, name_: str) -> None:
-        self._name = name_
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -138,16 +121,13 @@ class RegistryMetadata(Generic[T_co]):
     @property
     def key(self) -> Hashable:
         """The unique identifier used by this registry object.
-        By default this is a combination of class and bindings.
+        This is a combination of class and bindings.
         """
-        if self._key is None:
-            self._key = self._gen_key()
-        return self._key
+        return self._gen_key()
 
     def _gen_key(self):
-        return tuple(
-            itertools.chain((self._cls, self._name), (item for item in self._bindings.items()))
-        )
+        cls_and_bindings = (self._cls,) + tuple(self._bindings.items())
+        return cls_and_bindings
 
     @property
     def bindings(self) -> Kwargs:
@@ -177,16 +157,7 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = registry_impl._resolve(value)
 
-        config_ = registry_impl.config.get_init_kwargs(self)
-        if config_:
-            for name_, value in config_.items():
-                init_kwargs[name_] = value
-
         self._cls.__init__(obj, **init_kwargs)
-
-    def _start_object(self, obj: T_co) -> None:  # type: ignore[misc]
-        if self._start:
-            self._start(obj)
 
     def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]
         if self._close:
@@ -202,13 +173,7 @@ class RegistryMetadata(Generic[T_co]):
         return hash(self.key)
 
     def __str__(self) -> str:
-        return "{} {}({})".format(
-            repr(self._name) if self._name else "(unnamed)",
-            self._cls.__name__,
-            ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
-        )
+        return f"{self.key}"
 
     def __repr__(self) -> str:
-        return "<RegistryMetadata {} {}({})>".format(
-            repr(self._name) if self._name else "(unnamed)", self._cls.__name__, self._bindings
-        )
+        return f"<RegistryMetadata {self.key}>"

@@ -95,15 +95,8 @@ class FakeWorker:
     def __init__(self):
         FakeWorker.instance = self
 
-    def start(self):
-        self._started = True
-
     def close(self):
         self._closed = True
-
-
-inject.start_method(FakeWorker, FakeWorker.start)
-inject.close_method(FakeWorker, FakeWorker.close)
 
 
 def logic(registry_impl):
