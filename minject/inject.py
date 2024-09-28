@@ -2,9 +2,10 @@
 
 import itertools
 import os
-from typing import Any, Callable, Dict, Optional, Sequence, Type, TypeVar, Union, cast, overload
+from types import TracebackType
+from typing import Any, Callable, Dict, Optional, Protocol, Sequence, Type, TypeVar, Union, cast, overload
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeGuard, Self
 
 from .metadata import RegistryMetadata, _gen_meta, _get_meta
 from .model import (
@@ -16,8 +17,17 @@ from .model import (
 )
 from .types import _MinimalMappingProtocol
 
+class _AsyncContextProtocol(Protocol):
+    async def __aenter__(self : Self) -> Self:
+        ...
+
+    async def __aexit__(self, exc_type : Type[BaseException], exc_value : BaseException, traceback : TracebackType) -> None:
+        ...
+
+
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
+T_async_context = TypeVar("T_async_context", bound=_AsyncContextProtocol)
 R = TypeVar("R")
 
 
@@ -52,7 +62,6 @@ def bind(
 ) -> Callable[[Type[T]], Type[T]]:
     ...
 
-
 def bind(
     _close=None,
     **bindings,
@@ -69,6 +78,8 @@ def bind(
 
     return wrap
 
+def async_context(cls : Type[T_async_context]) -> Type[T_async_context]:
+    return cls
 
 def define(
     base_class: Type[T],

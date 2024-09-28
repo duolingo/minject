@@ -10,6 +10,8 @@ from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value
 
+from contextlib import AsyncExitStack
+
 LOG = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -76,8 +78,12 @@ class Registry(Resolver):
 
         self._lock = RLock()
 
+        self._async_context_stack : AsyncExitStack = AsyncExitStack()
+
         if config is not None:
             self._config._from_dict(config)
+
+
 
     @property
     def config(self) -> RegistryConfigWrapper:
@@ -226,6 +232,7 @@ class Registry(Resolver):
         else:
             raise KeyError(f"invalid key for Registry: {key!r}")
 
+
     @_synchronized
     def get(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
@@ -263,6 +270,15 @@ class Registry(Resolver):
                 return _unwrap(obj_list[0])
 
         return _unwrap(self._get_by_metadata(meta, default))
+
+    async def __aenter__(self) -> "Registry":
+        return self
+    
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        
+        # close all objects in the registry
+        self._async_context_stack.aclose()
+        return
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.

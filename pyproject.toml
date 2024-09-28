@@ -30,6 +30,7 @@ dependencies = [
     "pytest-cov",
     "pytest-mock",
     "pytest-xdist",
+    'pytest-asyncio',
     "typing",
 ]
 
