@@ -2,7 +2,7 @@
 
 from typing import Type
 import pytest
-from minject.registry import Registry
+from minject.registry import Registry, RegistryAPIError
 from minject.inject import bind, reference, async_context
 
 from types import TracebackType
@@ -44,14 +44,14 @@ class MyDependencyAsync:
 @bind(text=TEXT)
 @bind(dep_async=reference(MyDependencyAsync))
 @bind(dep_not_specified=reference(MyDependencyNotSpecifiedAsync))
-class MyApi:
+class MyAsyncApi:
     def __init__(self, text : str, dep_async : MyDependencyAsync, dep_not_specified : MyDependencyNotSpecifiedAsync) -> None:
         self.text = text
         self.in_context = False
         self.dep_async = dep_async
         self.dep_not_specified = dep_not_specified
 
-    async def __aenter__(self) -> "MyApi":
+    async def __aenter__(self) -> "MyAsyncApi":
         self.in_context = True
         return self
     
@@ -62,7 +62,7 @@ class MyApi:
 
 async def test_async_registry(registry : Registry) -> None:
     async with registry as r:
-        my_api = r[MyApi]
+        my_api = await r.aget(MyAsyncApi)
         assert my_api.text == TEXT
         assert my_api.in_context == True
         assert my_api.dep_async.in_context == True
@@ -72,5 +72,18 @@ async def test_async_registry(registry : Registry) -> None:
     assert my_api.dep_async.in_context == False
     assert my_api.dep_not_specified.in_context == False
 
+async def test_async_context_outside_context_manager(registry : Registry) -> None:
+    with pytest.raises(RegistryAPIError):
+        # attempting to instantiate a class
+        # marked with @async_context without
+        # being in an async context should
+        # raise an error
+        _ = await registry.aget(MyAsyncApi)
 
+async def test_try_instantiate_async_class_with_sync_api(registry : Registry) -> None:
 
+    with pytest.raises(RegistryAPIError):
+        # attempting to instantiate a class
+        # marked with @async_context using sync API
+        # should raise an error
+        _ = registry[MyDependencyAsync]

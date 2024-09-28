@@ -18,6 +18,12 @@ T = TypeVar("T")
 R = TypeVar("R")
 P = ParamSpec("P")
 
+class RegistryAPIError(Exception):
+    """
+    Error representing misuse of the Registry API.
+    Do not catch this error in your code.
+    """
+    ...
 
 class _AutoOrNone:
     def __nonzero__(self):
@@ -270,6 +276,9 @@ class Registry(Resolver):
                 return _unwrap(obj_list[0])
 
         return _unwrap(self._get_by_metadata(meta, default))
+
+    async def aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
+        raise NotImplementedError("async get not implemented")
 
     async def __aenter__(self) -> "Registry":
         return self
