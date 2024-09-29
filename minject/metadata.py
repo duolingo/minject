@@ -112,6 +112,7 @@ class RegistryMetadata(Generic[T_co]):
 
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
+        self._is_async_context = False
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -142,6 +143,12 @@ class RegistryMetadata(Generic[T_co]):
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
 
+    def update_async_context(self, is_async_context : bool) -> None:
+        self._is_async_context = is_async_context
+
+    def is_async_context(self) -> bool:
+        return self._is_async_context
+
     def _new_object(self) -> T_co:
         return self._cls.__new__(self._cls)
 
@@ -157,6 +164,13 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = registry_impl._resolve(value)
 
+        self._cls.__init__(obj, **init_kwargs)
+
+    async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
+        init_kwargs = {}
+        for name_, value in self._bindings.items():
+            # the specific deferred value checks if they are async or
+            init_kwargs[name_] = await registry_impl._aresolve(value)
         self._cls.__init__(obj, **init_kwargs)
 
     def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]

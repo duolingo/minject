@@ -3,17 +3,18 @@
 import itertools
 import os
 from types import TracebackType
-from typing import Any, Callable, Dict, Optional, Protocol, Sequence, Type, TypeVar, Union, cast, overload
+from typing import Any, Callable, Coroutine, Dict, Optional, Protocol, Sequence, Type, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeGuard, Self
 
-from .metadata import RegistryMetadata, _gen_meta, _get_meta
+from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta
 from .model import (
     Deferred,
     DeferredAny,
     RegistryKey,  # pylint: disable=unused-import
     Resolver,
     resolve_value,
+    aresolve_value,
 )
 from .types import _MinimalMappingProtocol
 
@@ -79,6 +80,8 @@ def bind(
     return wrap
 
 def async_context(cls : Type[T_async_context]) -> Type[T_async_context]:
+    meta = _gen_meta(cls)
+    meta.update_async_context(True)
     return cls
 
 def define(
@@ -102,6 +105,22 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
     return isinstance(key, type)
 
 
+def is_key_async(key: RegistryKey) -> bool:
+    """
+    Check if a key is an async key.
+    """
+    if isinstance(key, str):
+        return False
+    elif isinstance(key, RegistryMetadata):
+        return key.is_async_context()
+    elif isinstance(key, type):
+        try: # type: ignore
+            inject_metadata = object.__getattribute__(key, _INJECT_METADATA_ATTR)
+            return inject_metadata.is_async_context() # type: ignore
+        except AttributeError:
+            return False
+    assert False, f"Unexpected key type: {key}"
+
 class _RegistryReference(Deferred[T_co]):
     """Reference to an object in the registry to be loaded later.
     (you should not instantiate this class directly, instead use the
@@ -112,6 +131,15 @@ class _RegistryReference(Deferred[T_co]):
         self._key = key
 
     def resolve(self, registry_impl: Resolver) -> T_co:
+        return registry_impl.resolve(self._key)
+    
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        # TODO: this should needs to be able to tell if BOTH a TYPE
+        # or a RegistryMetadata is async. This means that given a type,
+        # we need to check that the metadata within the type if it exists.
+        if is_key_async(self._key):
+            return await registry_impl.aresolve(self._key)
+
         return registry_impl.resolve(self._key)
 
     @property
@@ -198,6 +226,9 @@ class _RegistryFunction(Deferred[T_co]):
         for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func()(*args, **kwargs)
+    
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        raise NotImplementedError("Have not implemented async registry function")
 
     def func(self) -> Callable[..., T_co]:
         return self._func
@@ -283,6 +314,10 @@ class _RegistryConfig(Deferred[T_co]):
             raise KeyError(self._key)
         else:
             return cast(T_co, self._default)
+    
+
+    async def aresolve(self, registry_impl: Resolver) -> Coroutine[Any, Any, T_co]:
+        raise NotImplementedError("Have not implemented async registry config")
 
     @property
     def key(self) -> Optional[str]:
@@ -326,6 +361,9 @@ class _RegistryNestedConfig(Deferred[T_co]):
             else:
                 return self._default
         return cast(T_co, sub)
+    
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        raise NotImplementedError("Have not implemented async registry nested config")
 
 
 def nested_config(
@@ -384,6 +422,9 @@ class _RegistrySelf(Deferred[Resolver]):
     """Reference to the Registry instance itself."""
 
     def resolve(self, registry_impl: Resolver) -> Resolver:
+        return registry_impl
+    
+    async def aresolve(self, registry_impl: Resolver) -> Resolver:
         return registry_impl
 
 

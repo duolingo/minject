@@ -60,7 +60,16 @@ class MyAsyncApi:
         self.in_context = False
         pass
 
-async def test_async_registry(registry : Registry) -> None:
+async def test_async_registry_simple(registry : Registry) -> None:
+    async with registry as r:
+        my_api = await r.aget(MyDependencyAsync)
+        assert my_api.in_context == True
+
+    assert my_api.in_context == False
+
+
+
+async def test_async_registry_recursive(registry : Registry) -> None:
     async with registry as r:
         my_api = await r.aget(MyAsyncApi)
         assert my_api.text == TEXT

@@ -8,7 +8,7 @@ from typing_extensions import Concatenate, ParamSpec
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
-from .model import RegistryKey, Resolvable, Resolver, resolve_value
+from .model import RegistryKey, Resolvable, Resolver, resolve_value, aresolve_value
 
 from contextlib import AsyncExitStack
 
@@ -85,6 +85,7 @@ class Registry(Resolver):
         self._lock = RLock()
 
         self._async_context_stack : AsyncExitStack = AsyncExitStack()
+        self._async_can_proceed = False
 
         if config is not None:
             self._config._from_dict(config)
@@ -98,8 +99,14 @@ class Registry(Resolver):
     def resolve(self, key: "RegistryKey[T]") -> T:
         return self[key]
 
+    async def aresolve(self, key: "RegistryKey[T]") -> T:
+        return await self.aget(key)
+
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
+
+    async def _aresolve(self, value: Resolvable[T]) -> T:
+        return await aresolve_value(self, value)
 
     @_synchronized
     def close(self) -> None:
@@ -192,6 +199,30 @@ class Registry(Resolver):
 
         return wrapper
 
+    async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
+        LOG.debug("registering %s", meta)
+
+        # allocate the object (but don't initialize yet)
+        obj = meta._new_object()
+
+        # add to the registry (done before init in case of circular reference)
+        wrapper = self._set_by_metadata(meta, obj, _global=False)
+
+        success = False
+        try:
+            # initialize the object
+            await meta._ainit_object(obj, self)
+            # add to our list of all objects (this MUST happen after init so
+            # any references come earlier in sequence and are destroyed first)
+            self._objects.append(wrapper)
+            success = True
+        finally:
+            if not success:
+                self._remove_by_metadata(meta, wrapper, _global=False)
+
+        return wrapper
+
+
     @_synchronized
     def _get_by_metadata(
         self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
@@ -212,6 +243,26 @@ class Registry(Resolver):
             return RegistryWrapper(cast(T, default))
         else:
             return None
+
+    async def _aget_by_metadata(
+        self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
+    ) -> Optional[RegistryWrapper[T]]:
+        """
+        Get a registered object by metadata.
+        Parameters:
+            meta: the metadata which refers to the object.
+            default: return value if meta has not been registered.
+                Use AUTO_OR_NONE to create the object when missing.
+        """
+        if meta in self._by_meta:
+            return self._by_meta[meta]
+
+        if default is AUTO_OR_NONE:
+            return await self._aregister_by_metadata(meta)
+        elif default is not None:
+            return RegistryWrapper(cast(T, default))
+        else:
+            return None        
 
     @_synchronized
     def __len__(self) -> int:
@@ -278,13 +329,38 @@ class Registry(Resolver):
         return _unwrap(self._get_by_metadata(meta, default))
 
     async def aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
-        raise NotImplementedError("async get not implemented")
+        
+        # TODO: do this better
+        if default is None:
+            default = AUTO_OR_NONE
+
+        if not self._async_can_proceed:
+            raise RegistryAPIError("cannot use aget outside of async context")
+        
+        if isinstance(key, str):
+            return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))).obj)
+        
+        meta = _get_meta_from_key(key)
+
+        if isinstance(key, type):
+            if _get_meta(key, include_bases=False) is not None:
+                by_meta = await self._aget_by_metadata(meta, default)
+                return _unwrap(by_meta).obj
+
+            obj_list = self._by_iface.get(key)
+            if obj_list:
+                return obj_list[0].obj
 
     async def __aenter__(self) -> "Registry":
+        if self._async_can_proceed:
+            raise RegistryAPIError("Attempting to enter registry context while already in context. This should not happen.")
+        self._async_can_proceed = True
         return self
     
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        
+        if not self._async_can_proceed:
+            raise RegistryAPIError("Attempting to exit registry context while not in context. This should not happen.")
+        self._async_can_proceed = False
         # close all objects in the registry
         self._async_context_stack.aclose()
         return

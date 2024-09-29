@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 RegistryKey: TypeAlias = "Union[str, Type[T_co], RegistryMetadata[T_co]]"
 
-
 class Resolver(abc.ABC):
     """
     Interface capable of resolving keys and deferred values into instances.
@@ -32,6 +31,10 @@ class Resolver(abc.ABC):
 
     @abc.abstractmethod
     def resolve(self, key: "RegistryKey[T]") -> T:
+        ...
+
+    @abc.abstractmethod
+    async def aresolve(self, key: "RegistryKey[T]") -> T:
         ...
 
     @property
@@ -52,6 +55,10 @@ class Deferred(abc.ABC, Generic[T_co]):
     def resolve(self, registry_impl: Resolver) -> T_co:
         ...
 
+    @abc.abstractmethod
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        ...
+
 
 Resolvable = Union[Deferred[T_co], T_co]
 # Union of Deferred and Any is just Any, but want to call out that a Deffered is quite common
@@ -67,5 +74,16 @@ def resolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
     """
     if isinstance(value, Deferred):
         return value.resolve(registry_impl)
+    else:
+        return value
+
+async def aresolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
+    """
+    Resolve a Resolvable value into a concrete value from the given registry.
+    If value is an instance of Deferred, it will be resolved using the provided
+    resolver, otherwise it is already a concrete value and will be returned as is.
+    """
+    if isinstance(value, Deferred):
+        return await value.aresolve(registry_impl)
     else:
         return value
