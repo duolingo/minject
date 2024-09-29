@@ -3,9 +3,22 @@
 import itertools
 import os
 from types import TracebackType
-from typing import Any, Callable, Coroutine, Dict, Optional, Protocol, Sequence, Type, TypeVar, Union, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Optional,
+    Protocol,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from typing_extensions import TypeGuard, Self
+from typing_extensions import Self, TypeGuard
 
 from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta
 from .model import (
@@ -13,16 +26,19 @@ from .model import (
     DeferredAny,
     RegistryKey,  # pylint: disable=unused-import
     Resolver,
-    resolve_value,
     aresolve_value,
+    resolve_value,
 )
 from .types import _MinimalMappingProtocol
 
+
 class _AsyncContextProtocol(Protocol):
-    async def __aenter__(self : Self) -> Self:
+    async def __aenter__(self: Self) -> Self:
         ...
 
-    async def __aexit__(self, exc_type : Type[BaseException], exc_value : BaseException, traceback : TracebackType) -> None:
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
+    ) -> None:
         ...
 
 
@@ -63,6 +79,7 @@ def bind(
 ) -> Callable[[Type[T]], Type[T]]:
     ...
 
+
 def bind(
     _close=None,
     **bindings,
@@ -79,10 +96,12 @@ def bind(
 
     return wrap
 
-def async_context(cls : Type[T_async_context]) -> Type[T_async_context]:
+
+def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     meta = _gen_meta(cls)
     meta.update_async_context(True)
     return cls
+
 
 def define(
     base_class: Type[T],
@@ -114,12 +133,13 @@ def is_key_async(key: RegistryKey) -> bool:
     elif isinstance(key, RegistryMetadata):
         return key.is_async_context()
     elif isinstance(key, type):
-        try: # type: ignore
+        try:  # type: ignore
             inject_metadata = object.__getattribute__(key, _INJECT_METADATA_ATTR)
-            return inject_metadata.is_async_context() # type: ignore
+            return inject_metadata.is_async_context()  # type: ignore
         except AttributeError:
             return False
     assert False, f"Unexpected key type: {key}"
+
 
 class _RegistryReference(Deferred[T_co]):
     """Reference to an object in the registry to be loaded later.
@@ -132,7 +152,7 @@ class _RegistryReference(Deferred[T_co]):
 
     def resolve(self, registry_impl: Resolver) -> T_co:
         return registry_impl.resolve(self._key)
-    
+
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         # TODO: this should needs to be able to tell if BOTH a TYPE
         # or a RegistryMetadata is async. This means that given a type,
@@ -228,7 +248,7 @@ class _RegistryFunction(Deferred[T_co]):
         for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func()(*args, **kwargs)
-    
+
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         raise NotImplementedError("Have not implemented async registry function")
 
@@ -316,7 +336,6 @@ class _RegistryConfig(Deferred[T_co]):
             raise KeyError(self._key)
         else:
             return cast(T_co, self._default)
-    
 
     async def aresolve(self, registry_impl: Resolver) -> Coroutine[Any, Any, T_co]:
         raise NotImplementedError("Have not implemented async registry config")
@@ -363,7 +382,7 @@ class _RegistryNestedConfig(Deferred[T_co]):
             else:
                 return self._default
         return cast(T_co, sub)
-    
+
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         raise NotImplementedError("Have not implemented async registry nested config")
 
@@ -425,7 +444,7 @@ class _RegistrySelf(Deferred[Resolver]):
 
     def resolve(self, registry_impl: Resolver) -> Resolver:
         return registry_impl
-    
+
     async def aresolve(self, registry_impl: Resolver) -> Resolver:
         return registry_impl
 

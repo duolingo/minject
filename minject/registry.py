@@ -1,18 +1,17 @@
 """The Registry itself is a runtime collection of initialized classes."""
 import functools
 import logging
+from contextlib import AsyncExitStack
 from threading import RLock
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
+from minject.inject import is_key_async
+
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
-from .model import RegistryKey, Resolvable, Resolver, resolve_value, aresolve_value
-
-from contextlib import AsyncExitStack
-
-from minject.inject import is_key_async
+from .model import RegistryKey, Resolvable, Resolver, aresolve_value, resolve_value
 
 LOG = logging.getLogger(__name__)
 
@@ -20,12 +19,15 @@ T = TypeVar("T")
 R = TypeVar("R")
 P = ParamSpec("P")
 
+
 class RegistryAPIError(Exception):
     """
     Error representing misuse of the Registry API.
     Do not catch this error in your code.
     """
+
     ...
+
 
 class _AutoOrNone:
     def __nonzero__(self):
@@ -86,13 +88,11 @@ class Registry(Resolver):
 
         self._lock = RLock()
 
-        self._async_context_stack : AsyncExitStack = AsyncExitStack()
+        self._async_context_stack: AsyncExitStack = AsyncExitStack()
         self._async_can_proceed = False
 
         if config is not None:
             self._config._from_dict(config)
-
-
 
     @property
     def config(self) -> RegistryConfigWrapper:
@@ -104,10 +104,12 @@ class Registry(Resolver):
     async def aresolve(self, key: "RegistryKey[T]") -> T:
         return await self._aget(key)
 
-    async def push_async_context(self, key : Any) -> Any:
+    async def push_async_context(self, key: Any) -> Any:
         result = await self._async_context_stack.enter_async_context(key)
-        if not (result is key):
-            raise ValueError("The async context manager returned is not the same as the one passed to it")
+        if result is not key:
+            raise ValueError(
+                "The async context manager returned is not the same as the one passed to it"
+            )
 
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
@@ -229,7 +231,6 @@ class Registry(Resolver):
 
         return wrapper
 
-
     @_synchronized
     def _get_by_metadata(
         self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
@@ -269,7 +270,7 @@ class Registry(Resolver):
         elif default is not None:
             return RegistryWrapper(cast(T, default))
         else:
-            return None        
+            return None
 
     @_synchronized
     def __len__(self) -> int:
@@ -295,7 +296,6 @@ class Registry(Resolver):
             return bool(self._get_by_metadata(key, False))
         else:
             raise KeyError(f"invalid key for Registry: {key!r}")
-
 
     @_synchronized
     def get(
@@ -335,18 +335,19 @@ class Registry(Resolver):
 
         return _unwrap(self._get_by_metadata(meta, default))
 
-    async def _aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
-        
+    async def _aget(
+        self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
+    ) -> T:
         # TODO: do this better
         if default is None:
             default = AUTO_OR_NONE
 
         if not self._async_can_proceed:
             raise RegistryAPIError("cannot use aget outside of async context")
-        
+
         if isinstance(key, str):
             return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))).obj)
-        
+
         meta = _get_meta_from_key(key)
 
         if isinstance(key, type):
@@ -358,35 +359,39 @@ class Registry(Resolver):
             if obj_list:
                 return obj_list[0].obj
 
-    async def aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
+    async def aget(
+        self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
+    ) -> T:
         """
         Async API for getting objects
         """
-
         if not is_key_async(key):
             raise RegistryAPIError("cannot use aget outside of async context")
 
         # TODO: the reason this is split into aget and _aget is that
         # the aresolve method of Defererd objects is never called on
         # the top level objec. This means that we must enter the context of the top
-        # level object from  
+        # level object from
         value = await self._aget(key, default)
         await self.push_async_context(value)
         return value
 
     async def __aenter__(self) -> "Registry":
         if self._async_can_proceed:
-            raise RegistryAPIError("Attempting to enter registry context while already in context. This should not happen.")
+            raise RegistryAPIError(
+                "Attempting to enter registry context while already in context. This should not happen."
+            )
         self._async_can_proceed = True
         return self
-    
+
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         if not self._async_can_proceed:
-            raise RegistryAPIError("Attempting to exit registry context while not in context. This should not happen.")
+            raise RegistryAPIError(
+                "Attempting to exit registry context while not in context. This should not happen."
+            )
         self._async_can_proceed = False
         # close all objects in the registry
         await self._async_context_stack.aclose()
-        return
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.
@@ -398,7 +403,6 @@ class Registry(Resolver):
         Raises:
             KeyError: if the object is not registered and cannot be generated.
         """
-
         if is_key_async(key):
             raise RegistryAPIError("cannot use get outside of async context")
 

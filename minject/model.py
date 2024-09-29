@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 RegistryKey: TypeAlias = "Union[str, Type[T_co], RegistryMetadata[T_co]]"
 
+
 class Resolver(abc.ABC):
     """
     Interface capable of resolving keys and deferred values into instances.
@@ -46,7 +47,6 @@ class Resolver(abc.ABC):
     def config(self) -> RegistryConfigWrapper:
         ...
 
-    
 
 MockingFunction: TypeAlias = Callable[[Arg], Any]
 
@@ -81,6 +81,7 @@ def resolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
         return value.resolve(registry_impl)
     else:
         return value
+
 
 async def aresolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
     """

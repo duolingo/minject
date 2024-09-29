@@ -143,7 +143,7 @@ class RegistryMetadata(Generic[T_co]):
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
 
-    def update_async_context(self, is_async_context : bool) -> None:
+    def update_async_context(self, is_async_context: bool) -> None:
         self._is_async_context = is_async_context
 
     def is_async_context(self) -> bool:
