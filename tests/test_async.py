@@ -81,6 +81,13 @@ async def test_async_registry_recursive(registry : Registry) -> None:
     assert my_api.dep_async.in_context == False
     assert my_api.dep_not_specified.in_context == False
 
+async def test_multiple_instantiation(registry : Registry) -> None:
+    async with registry as r:
+        my_api = await r.aget(MyAsyncApi)
+        my_api_2 = await r.aget(MyAsyncApi)
+        my_api_3 = await r.aget(MyAsyncApi)
+        assert my_api is my_api_2 is my_api_3
+
 async def test_async_context_outside_context_manager(registry : Registry) -> None:
     with pytest.raises(RegistryAPIError):
         # attempting to instantiate a class
@@ -96,3 +103,9 @@ async def test_try_instantiate_async_class_with_sync_api(registry : Registry) ->
         # marked with @async_context using sync API
         # should raise an error
         _ = registry[MyDependencyAsync]
+
+    with pytest.raises(RegistryAPIError):
+        # still throws an error even when registry context
+        # has been entered
+        async with registry as r:
+            _ = r[MyAsyncApi]
