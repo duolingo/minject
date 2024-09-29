@@ -2,7 +2,7 @@
 import functools
 import logging
 from threading import RLock
-from typing import Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -11,6 +11,8 @@ from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, resolve_value, aresolve_value
 
 from contextlib import AsyncExitStack
+
+from minject.inject import is_key_async
 
 LOG = logging.getLogger(__name__)
 
@@ -100,7 +102,12 @@ class Registry(Resolver):
         return self[key]
 
     async def aresolve(self, key: "RegistryKey[T]") -> T:
-        return await self.aget(key)
+        return await self._aget(key)
+
+    async def push_async_context(self, key : Any) -> Any:
+        result = await self._async_context_stack.enter_async_context(key)
+        if not (result is key):
+            raise ValueError("The async context manager returned is not the same as the one passed to it")
 
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
@@ -328,7 +335,7 @@ class Registry(Resolver):
 
         return _unwrap(self._get_by_metadata(meta, default))
 
-    async def aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
+    async def _aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
         
         # TODO: do this better
         if default is None:
@@ -345,11 +352,27 @@ class Registry(Resolver):
         if isinstance(key, type):
             if _get_meta(key, include_bases=False) is not None:
                 by_meta = await self._aget_by_metadata(meta, default)
-                return _unwrap(by_meta).obj
+                return _unwrap(by_meta)
 
             obj_list = self._by_iface.get(key)
             if obj_list:
                 return obj_list[0].obj
+
+    async def aget(self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None) -> T:
+        """
+        Async API for getting objects
+        """
+
+        if not is_key_async(key):
+            raise RegistryAPIError("cannot use aget outside of async context")
+
+        # TODO: the reason this is split into aget and _aget is that
+        # the aresolve method of Defererd objects is never called on
+        # the top level objec. This means that we must enter the context of the top
+        # level object from  
+        value = await self._aget(key, default)
+        await self.push_async_context(value)
+        return value
 
     async def __aenter__(self) -> "Registry":
         if self._async_can_proceed:
@@ -362,7 +385,7 @@ class Registry(Resolver):
             raise RegistryAPIError("Attempting to exit registry context while not in context. This should not happen.")
         self._async_can_proceed = False
         # close all objects in the registry
-        self._async_context_stack.aclose()
+        await self._async_context_stack.aclose()
         return
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
@@ -375,6 +398,10 @@ class Registry(Resolver):
         Raises:
             KeyError: if the object is not registered and cannot be generated.
         """
+
+        if is_key_async(key):
+            raise RegistryAPIError("cannot use get outside of async context")
+
         obj = self.get(key, default=AUTO_OR_NONE)
         if obj is None or obj is AUTO_OR_NONE:
             raise KeyError(key)

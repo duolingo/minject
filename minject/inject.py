@@ -138,7 +138,9 @@ class _RegistryReference(Deferred[T_co]):
         # or a RegistryMetadata is async. This means that given a type,
         # we need to check that the metadata within the type if it exists.
         if is_key_async(self._key):
-            return await registry_impl.aresolve(self._key)
+            result = await registry_impl.aresolve(self._key)
+            await registry_impl.push_async_context(result)
+            return result
 
         return registry_impl.resolve(self._key)
 

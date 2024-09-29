@@ -37,11 +37,16 @@ class Resolver(abc.ABC):
     async def aresolve(self, key: "RegistryKey[T]") -> T:
         ...
 
+    @abc.abstractmethod
+    async def push_async_context(self, key: Any) -> Any:
+        ...
+
     @property
     @abc.abstractmethod
     def config(self) -> RegistryConfigWrapper:
         ...
 
+    
 
 MockingFunction: TypeAlias = Callable[[Arg], Any]
 
