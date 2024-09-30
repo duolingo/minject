@@ -46,20 +46,43 @@ class MyDependencyAsync:
 
 
 @async_context
+class MyAsyncAPIContextCounter:
+    def __init__(self) -> None:
+        self.in_context = False
+        self.entered_context_counter = 0
+        self.exited_context_counter = 0
+
+    async def __aenter__(self) -> "MyAsyncAPIContextCounter":
+        self.in_context = True
+        self.entered_context_counter += 1
+        return self
+
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
+    ) -> None:
+        del exc_type, exc_value, traceback
+        self.exited_context_counter += 1
+        self.in_context = False
+
+
+@async_context
 @bind(text=TEXT)
 @bind(dep_async=reference(MyDependencyAsync))
 @bind(dep_not_specified=reference(MyDependencyNotSpecifiedAsync))
+@bind(dep_context_counter=reference(MyAsyncAPIContextCounter))
 class MyAsyncApi:
     def __init__(
         self,
         text: str,
         dep_async: MyDependencyAsync,
         dep_not_specified: MyDependencyNotSpecifiedAsync,
+        dep_context_counter: MyAsyncAPIContextCounter,
     ) -> None:
         self.text = text
         self.in_context = False
         self.dep_async = dep_async
         self.dep_not_specified = dep_not_specified
+        self.dep_context_counter = dep_context_counter
 
     async def __aenter__(self) -> "MyAsyncApi":
         self.in_context = True
@@ -87,18 +110,38 @@ async def test_async_registry_recursive(registry: Registry) -> None:
         assert my_api.in_context == True
         assert my_api.dep_async.in_context == True
         assert my_api.dep_not_specified.in_context == False
+        assert my_api.dep_context_counter.in_context == True
+        assert my_api.dep_context_counter.entered_context_counter == 1
 
     assert my_api.in_context == False
     assert my_api.dep_async.in_context == False
     assert my_api.dep_not_specified.in_context == False
+    assert my_api.dep_context_counter.in_context == False
+    assert my_api.dep_context_counter.exited_context_counter == 1
 
 
-async def test_multiple_instantiation(registry: Registry) -> None:
+async def test_multiple_instantiation_child(registry: Registry) -> None:
+    my_api: MyAsyncApi
     async with registry as r:
         my_api = await r.aget(MyAsyncApi)
         my_api_2 = await r.aget(MyAsyncApi)
         my_api_3 = await r.aget(MyAsyncApi)
         assert my_api is my_api_2 is my_api_3
+
+        assert my_api.dep_context_counter.entered_context_counter == 1
+
+    assert my_api.dep_context_counter.exited_context_counter == 1
+
+
+async def test_multiple_instantiation_top_level(registry: Registry) -> None:
+    my_counter: MyAsyncAPIContextCounter
+    async with registry as r:
+        my_counter = await r.aget(MyAsyncAPIContextCounter)
+        my_api_2 = await r.aget(MyAsyncAPIContextCounter)
+        my_api_3 = await r.aget(MyAsyncAPIContextCounter)
+        assert my_counter is my_api_2 is my_api_3
+        assert my_counter.entered_context_counter == 1
+    assert my_counter.exited_context_counter == 1
 
 
 async def test_async_context_outside_context_manager(registry: Registry) -> None:
