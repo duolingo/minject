@@ -337,7 +337,7 @@ class Registry(Resolver):
 
     async def _aget(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
-    ) -> T:
+    ) -> Optional[T]:
         # TODO: do this better
         if default is None:
             default = AUTO_OR_NONE
@@ -358,6 +358,9 @@ class Registry(Resolver):
             obj_list = self._by_iface.get(key)
             if obj_list:
                 return obj_list[0].obj
+
+        by_meta = await self._aget_by_metadata(meta, default)
+        return _unwrap(by_meta)
 
     async def aget(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
