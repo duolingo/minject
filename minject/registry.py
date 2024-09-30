@@ -370,8 +370,9 @@ class Registry(Resolver):
 
         # TODO: the reason this is split into aget and _aget is that
         # the aresolve method of Deferred objects is never called on
-        # the top level objec. This means that we must enter the context of the top
-        # level object from
+        # the top level object itself. This means that we must enter
+        # the context of the top level object from the call to aget if it
+        # has not already been entered
         enter_context = True
         meta = _get_meta_from_key(key)
         if meta in self._by_meta:
