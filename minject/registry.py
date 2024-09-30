@@ -102,7 +102,10 @@ class Registry(Resolver):
         return self[key]
 
     async def aresolve(self, key: "RegistryKey[T]") -> T:
-        return await self._aget(key)
+        result = await self._aget(key)
+        if result is None:
+            raise KeyError(key, "could not be resolved")
+        return result
 
     async def push_async_context(self, key: Any) -> Any:
         result = await self._async_context_stack.enter_async_context(key)
@@ -364,7 +367,7 @@ class Registry(Resolver):
 
     async def aget(
         self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
-    ) -> T:
+    ) -> Optional[T]:
         """
         Async API for getting objects
         """
