@@ -336,7 +336,7 @@ class _RegistryConfig(Deferred[T_co]):
         else:
             return cast(T_co, self._default)
 
-    async def aresolve(self, registry_impl: Resolver) -> Coroutine[Any, Any, T_co]:
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
         raise NotImplementedError("Have not implemented async registry config")
 
     @property
