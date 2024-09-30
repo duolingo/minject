@@ -369,11 +369,16 @@ class Registry(Resolver):
             raise RegistryAPIError("cannot use aget outside of async context")
 
         # TODO: the reason this is split into aget and _aget is that
-        # the aresolve method of Defererd objects is never called on
+        # the aresolve method of Deferred objects is never called on
         # the top level objec. This means that we must enter the context of the top
         # level object from
+        enter_context = True
+        meta = _get_meta_from_key(key)
+        if meta in self._by_meta:
+            enter_context = False
         value = await self._aget(key, default)
-        await self.push_async_context(value)
+        if enter_context:
+            await self.push_async_context(value)
         return value
 
     async def __aenter__(self) -> "Registry":
