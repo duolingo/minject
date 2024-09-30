@@ -9,7 +9,6 @@ from typing import (
     Coroutine,
     Dict,
     Optional,
-    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -18,7 +17,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeGuard
+from typing_extensions import Protocol, Self, TypeGuard
 
 from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta
 from .model import (
