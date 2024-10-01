@@ -36,10 +36,18 @@ class Resolver(abc.ABC):
 
     @abc.abstractmethod
     async def aresolve(self, key: "RegistryKey[T]") -> T:
+        """
+        Resolve a key into an instance of that key. The key must be marked
+        with the @async_context decorator.
+        """
         ...
 
     @abc.abstractmethod
     async def push_async_context(self, key: Any) -> Any:
+        """
+        Push an async context onto the context stack maintained by the Resolver.
+        This is necessary when resolving an object marked with @async_context.
+        """
         ...
 
     @property
@@ -62,6 +70,11 @@ class Deferred(abc.ABC, Generic[T_co]):
 
     @abc.abstractmethod
     async def aresolve(self, registry_impl: Resolver) -> T_co:
+        """
+        Resolve a deferred object into an instance of the object. The object,
+        may or may not be asynchronous. If the object is asynchronous (marked with @async_context),
+        resolve the object asynchronously. Otherwise, resolve synchronously.
+        """
         ...
 
 

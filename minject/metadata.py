@@ -144,9 +144,15 @@ class RegistryMetadata(Generic[T_co]):
         self._bindings.update(bindings)
 
     def update_async_context(self, is_async_context: bool) -> None:
+        """
+        Set the async context flag for this metadata.
+        """
         self._is_async_context = is_async_context
 
     def is_async_context(self) -> bool:
+        """
+        Returns the value of the async context flag for this metadata.
+        """
         return self._is_async_context
 
     def _new_object(self) -> T_co:
@@ -167,6 +173,9 @@ class RegistryMetadata(Generic[T_co]):
         self._cls.__init__(obj, **init_kwargs)
 
     async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
+        """
+        asynchronous version of _init_object. Calls _aresolve instead of resolve.
+        """
         init_kwargs = {}
         for name_, value in self._bindings.items():
             # the specific deferred value checks if they are async or

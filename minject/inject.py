@@ -2,7 +2,6 @@
 
 import itertools
 import os
-from types import TracebackType
 from typing import (
     Any,
     Callable,
@@ -16,7 +15,9 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Protocol, Self, TypeGuard
+from typing_extensions import TypeGuard
+
+from minject.types import _AsyncContext
 
 from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta
 from .model import (
@@ -24,25 +25,13 @@ from .model import (
     DeferredAny,
     RegistryKey,  # pylint: disable=unused-import
     Resolver,
-    aresolve_value,
     resolve_value,
 )
-from .types import _MinimalMappingProtocol
-
-
-class _AsyncContextProtocol(Protocol):
-    async def __aenter__(self: Self) -> Self:
-        ...
-
-    async def __aexit__(
-        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
-    ) -> None:
-        ...
-
+from .types import _AsyncContext, _MinimalMappingProtocol
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
-T_async_context = TypeVar("T_async_context", bound=_AsyncContextProtocol)
+T_async_context = TypeVar("T_async_context", bound=_AsyncContext)
 R = TypeVar("R")
 
 
@@ -96,6 +85,12 @@ def bind(
 
 
 def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
+    """
+    Decorator to declare that a class is as an async context manager
+    that can be initialized by the registry. This is to distinguish the
+    class from an async context manager that should not be initialized
+    by the registry (an example of this being asyncio.Lock()).
+    """
     meta = _gen_meta(cls)
     meta.update_async_context(True)
     return cls
@@ -122,9 +117,10 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
     return isinstance(key, type)
 
 
-def is_key_async(key: RegistryKey) -> bool:
+def _is_key_async(key: RegistryKey) -> bool:
     """
-    Check if a key is an async key.
+    Check whether a registry key is an async context manager
+    marked for initialization within the registry (@async_context).
     """
     if isinstance(key, str):
         return False
@@ -152,7 +148,7 @@ class _RegistryReference(Deferred[T_co]):
         return registry_impl.resolve(self._key)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        if is_key_async(self._key):
+        if _is_key_async(self._key):
             result = await registry_impl.aresolve(self._key)
             await registry_impl.push_async_context(result)
             return result
@@ -332,7 +328,7 @@ class _RegistryConfig(Deferred[T_co]):
             return cast(T_co, self._default)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        raise NotImplementedError("Have not implemented async registry config")
+        return self.resolve(registry_impl)
 
     @property
     def key(self) -> Optional[str]:
@@ -378,7 +374,7 @@ class _RegistryNestedConfig(Deferred[T_co]):
         return cast(T_co, sub)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        raise NotImplementedError("Have not implemented async registry nested config")
+        return self.resolve(registry_impl)
 
 
 def nested_config(
@@ -440,7 +436,7 @@ class _RegistrySelf(Deferred[Resolver]):
         return registry_impl
 
     async def aresolve(self, registry_impl: Resolver) -> Resolver:
-        return registry_impl
+        return self.resolve(registry_impl)
 
 
 self_tag = _RegistrySelf()

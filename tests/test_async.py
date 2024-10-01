@@ -1,9 +1,9 @@
 from types import TracebackType
-from typing import Type
+from typing import Dict, Type
 
 import pytest
 
-from minject.inject import async_context, bind, reference
+from minject.inject import async_context, bind, config, nested_config, reference
 from minject.registry import Registry, RegistryAPIError
 
 TEXT = "we love tests"
@@ -11,7 +11,9 @@ TEXT = "we love tests"
 
 @pytest.fixture
 def registry() -> Registry:
-    return Registry()
+    config_dict: Dict[str, str] = {"a": {"b": "c"}, 1: 2}
+    r = Registry(config=config_dict)
+    return r
 
 
 class MyDependencyNotSpecifiedAsync:
@@ -95,6 +97,37 @@ class MyAsyncApi:
         self.in_context = False
 
 
+@async_context
+@bind(nested=nested_config("a.b"))
+@bind(flat=config(1))
+class MyAsyncApiWithConfig:
+    def __init__(self, nested: str, flat: int) -> None:
+        self.nested = nested
+        self.flat = flat
+
+    async def __aenter__(self) -> "MyAsyncApiWithConfig":
+        return self
+
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
+    ) -> None:
+        pass
+
+
+@async_context
+class BadContextManager:
+    def __init__(self) -> None:
+        pass
+
+    async def __aenter__(self) -> 1:
+        return 1
+
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
+    ):
+        pass
+
+
 async def test_async_registry_simple(registry: Registry) -> None:
     async with registry as r:
         my_api = await r.aget(MyDependencyAsync)
@@ -165,3 +198,20 @@ async def test_try_instantiate_async_class_with_sync_api(registry: Registry) -> 
         # has been entered
         async with registry as r:
             _ = r[MyAsyncApi]
+
+
+async def test_context_manager_aenter_must_return_self(registry: Registry) -> None:
+    """
+    Async context manager must return self from aenter method,
+    throw value error otherwise.
+    """
+    async with registry as r:
+        with pytest.raises(ValueError):
+            _ = await r.aget(BadContextManager)
+
+
+async def test_config_in_async(registry: Registry) -> None:
+    async with registry as r:
+        r = await r.aget(MyAsyncApiWithConfig)
+        assert r.nested == "c"
+        assert r.flat == 2
