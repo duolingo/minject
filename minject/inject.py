@@ -6,7 +6,6 @@ from types import TracebackType
 from typing import (
     Any,
     Callable,
-    Coroutine,
     Dict,
     Optional,
     Sequence,

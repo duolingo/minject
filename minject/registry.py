@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeV
 
 from typing_extensions import Concatenate, ParamSpec
 
-from minject.inject import is_key_async
+from minject.inject import _RegistryReference, is_key_async
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
@@ -365,28 +365,25 @@ class Registry(Resolver):
         by_meta = await self._aget_by_metadata(meta, default)
         return _unwrap(by_meta)
 
-    async def aget(
-        self, key: "RegistryKey[T]", default: Optional[Union[T, _AutoOrNone]] = None
-    ) -> Optional[T]:
+    async def aget(self, key: "RegistryKey[T]") -> Optional[T]:
         """
         Async API for getting objects
         """
         if not is_key_async(key):
             raise RegistryAPIError("cannot use aget outside of async context")
 
-        # TODO: the reason this is split into aget and _aget is that
-        # the aresolve method of Deferred objects is never called on
-        # the top level object itself. This means that we must enter
-        # the context of the top level object from the call to aget if it
-        # has not already been entered
-        enter_context = True
+        # check that the key is not already in the registry
         meta = _get_meta_from_key(key)
         if meta in self._by_meta:
-            enter_context = False
-        value = await self._aget(key, default)
-        if enter_context:
-            await self.push_async_context(value)
-        return value
+            return self._by_meta[meta].obj
+
+        # TODO: may need to add extra checks for interfaces and
+
+        # this is done diffenrenty than the sync version because the async version
+        # requires that the top level context of key be entered, and contexts are entered
+        # in a RegistryReference's aresolve method
+        reference = _RegistryReference(key)
+        return await self._aresolve(reference)
 
     async def __aenter__(self) -> "Registry":
         if self._async_can_proceed:
