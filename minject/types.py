@@ -29,6 +29,7 @@ class _AsyncContext(Protocol):
     """
     Protocol for any object that can be used as an async context manager.
     """
+
     async def __aenter__(self: Self) -> Self:
         ...
 

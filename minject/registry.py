@@ -102,13 +102,13 @@ class Registry(Resolver):
     def resolve(self, key: "RegistryKey[T]") -> T:
         return self[key]
 
-    async def aresolve(self, key: "RegistryKey[T]") -> T:
+    async def _aresolve(self, key: "RegistryKey[T]") -> T:
         result = await self._aget(key)
         if result is None:
             raise KeyError(key, "could not be resolved")
         return result
 
-    async def push_async_context(self, key: Any) -> Any:
+    async def _push_async_context(self, key: Any) -> Any:
         result = await self._async_context_stack.enter_async_context(key)
         if result is not key:
             raise ValueError(
@@ -125,7 +125,10 @@ class Registry(Resolver):
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
 
-    async def _aresolve(self, value: Resolvable[T]) -> T:
+    async def _aresolve_resolvable(self, value: Resolvable[T]) -> T:
+        """
+        Async version of _resolve.
+        """
         return await aresolve_value(self, value)
 
     @_synchronized
@@ -387,7 +390,7 @@ class Registry(Resolver):
         # requires that the top level context of key be entered, and contexts are entered
         # in a RegistryReference's aresolve method
         reference = _RegistryReference(key)
-        return await self._aresolve(reference)
+        return await self._aresolve_resolvable(reference)
 
     async def __aenter__(self) -> "Registry":
         """

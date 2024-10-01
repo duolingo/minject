@@ -179,7 +179,7 @@ class RegistryMetadata(Generic[T_co]):
         """
         init_kwargs = {}
         for name_, value in self._bindings.items():
-            init_kwargs[name_] = await registry_impl._aresolve(value)
+            init_kwargs[name_] = await registry_impl._aresolve_resolvable(value)
         self._cls.__init__(obj, **init_kwargs)
 
     def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]
