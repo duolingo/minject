@@ -5,8 +5,6 @@ from functools import lru_cache
 from random import shuffle
 from typing import Sequence
 
-import pytest
-
 import tests.test_registry_helpers as helpers
 from minject.inject import (
     _RegistryConfig,
@@ -458,7 +456,6 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual(n_objects, len(self.registry))
         self.assertEqual(n_objects, len(self.registry._by_name))
 
-    @pytest.mark.skip(reason="This test is flaky")
     def test_concurrent_lazy_init(self) -> None:
         """
         Test lazy initialization of singletons in a concurrent environment always returns the same object

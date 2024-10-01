@@ -179,7 +179,6 @@ class RegistryMetadata(Generic[T_co]):
         """
         init_kwargs = {}
         for name_, value in self._bindings.items():
-            # the specific deferred value checks if they are async or
             init_kwargs[name_] = await registry_impl._aresolve(value)
         self._cls.__init__(obj, **init_kwargs)
 
