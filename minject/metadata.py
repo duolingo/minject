@@ -174,7 +174,8 @@ class RegistryMetadata(Generic[T_co]):
 
     async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
         """
-        asynchronous version of _init_object. Calls _aresolve instead of resolve.
+        asynchronous version of _init_object. Calls _aresolve instead
+        of _resolve.
         """
         init_kwargs = {}
         for name_, value in self._bindings.items():

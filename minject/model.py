@@ -46,7 +46,8 @@ class Resolver(abc.ABC):
     async def push_async_context(self, key: Any) -> Any:
         """
         Push an async context onto the context stack maintained by the Resolver.
-        This is necessary when resolving an object marked with @async_context.
+        This is necessary to enter/close the context of an object
+        marked with @async_context.
         """
         ...
 
