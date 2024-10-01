@@ -85,9 +85,7 @@ def resolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
 
 async def aresolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
     """
-    Resolve a Resolvable value into a concrete value from the given registry.
-    If value is an instance of Deferred, it will be resolved using the provided
-    resolver, otherwise it is already a concrete value and will be returned as is.
+    Async version of resolve_value, which calls aresolve on Deferred instances.
     """
     if isinstance(value, Deferred):
         return await value.aresolve(registry_impl)

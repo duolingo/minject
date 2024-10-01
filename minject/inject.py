@@ -152,14 +152,10 @@ class _RegistryReference(Deferred[T_co]):
         return registry_impl.resolve(self._key)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        # TODO: this should needs to be able to tell if BOTH a TYPE
-        # or a RegistryMetadata is async. This means that given a type,
-        # we need to check that the metadata within the type if it exists.
         if is_key_async(self._key):
             result = await registry_impl.aresolve(self._key)
             await registry_impl.push_async_context(result)
             return result
-
         return registry_impl.resolve(self._key)
 
     @property
