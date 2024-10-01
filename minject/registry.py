@@ -351,18 +351,21 @@ class Registry(Resolver):
         # retrieve the class metdata, and the metadata of class
         # without inherited metadata
         meta = _get_meta_from_key(key)
-        meta_no_bases = _get_meta(key, include_bases=False)
 
         # if the class has already been registered, return it
         if meta in self._by_meta:
             return _unwrap(self._by_meta[meta])
 
-        # if the class has no metadata, but a parent has been registered in registry,
-        # return the registered parent.
-        if isinstance(key, type) and meta_no_bases is None:
-            obj_list = self._by_iface.get(key)
-            if obj_list:
-                return _unwrap(obj_list[0])
+        # If the class has no metadata, but a parent has been registered in registry,
+        # return the registered parent. If the class has metadata, we should not
+        # check parents, we must use the metadata attached to the class to
+        # construct the object.
+        if isinstance(key, type):
+            meta_no_bases = _get_meta(key, include_bases=False)
+            if meta_no_bases is None:
+                obj_list = self._by_iface.get(key)
+                if obj_list:
+                    return _unwrap(obj_list[0])
 
         # nothing has been registered for this metadata yet
         return None
