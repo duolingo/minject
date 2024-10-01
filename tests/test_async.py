@@ -215,3 +215,10 @@ async def test_config_in_async(registry: Registry) -> None:
         r = await r.aget(MyAsyncApiWithConfig)
         assert r.nested == "c"
         assert r.flat == 2
+
+
+async def test_entering_already_entered_registry_throws(registry: Registry) -> None:
+    async with registry as r:
+        with pytest.raises(RegistryAPIError):
+            async with r:
+                pass
