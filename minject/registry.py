@@ -324,7 +324,7 @@ class Registry(Resolver):
             return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))))
 
         meta = _get_meta_from_key(key)
-        maybe_class = self._get_class_if_registered(key, meta)
+        maybe_class = self._get_if_already_in_registry(key, meta)
         if maybe_class is not None:
             return maybe_class
 
@@ -338,14 +338,14 @@ class Registry(Resolver):
             raise RegistryAPIError("cannot use aget with string keys. Use get instead.")
 
         meta = _get_meta_from_key(key)
-        maybe_class = self._get_class_if_registered(key, meta)
+        maybe_class = self._get_if_already_in_registry(key, meta)
         if maybe_class is not None:
             return maybe_class
 
         by_meta = await self._aget_by_metadata(meta)
         return _unwrap(by_meta)
 
-    def _get_class_if_registered(
+    def _get_if_already_in_registry(
         self, key: "RegistryKey[T]", meta: "RegistryMetadata[T]"
     ) -> Optional[T]:
         # retrieve the class metdata, and the metadata of class
@@ -356,16 +356,18 @@ class Registry(Resolver):
         if meta in self._by_meta:
             return _unwrap(self._by_meta[meta])
 
+        # following checks only apply if key is a class
+        if not isinstance(key, type):
+            return None
+
         # If the class has no metadata, but a parent has been registered in registry,
         # return the registered parent. If the class has metadata, we should not
         # check parents, we must use the metadata attached to the class to
         # construct the object.
-        if isinstance(key, type):
-            meta_no_bases = _get_meta(key, include_bases=False)
-            if meta_no_bases is None:
-                obj_list = self._by_iface.get(key)
-                if obj_list:
-                    return _unwrap(obj_list[0])
+        meta_no_bases = _get_meta(key, include_bases=False)
+        obj_list = self._by_iface.get(key)
+        if meta_no_bases is None and obj_list:
+            return _unwrap(obj_list[0])
 
         # nothing has been registered for this metadata yet
         return None
@@ -377,11 +379,9 @@ class Registry(Resolver):
         if not _is_key_async(key):
             raise RegistryAPIError("cannot use aget outside of async context")
 
-        maybe_class = self._get_class_if_registered(key, _get_meta_from_key(key))
+        maybe_class = self._get_if_already_in_registry(key, _get_meta_from_key(key))
         if maybe_class is not None:
             return maybe_class
-
-        # TODO: may need to add extra checks for interfaces and
 
         # this is done differently than the sync version because the async version
         # requires that the top level context of key be entered, and contexts are entered
