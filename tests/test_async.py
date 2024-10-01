@@ -177,6 +177,16 @@ async def test_multiple_instantiation_top_level(registry: Registry) -> None:
     assert my_counter.exited_context_counter == 1
 
 
+async def test_multiple_instantiation_mixed(registry: Registry) -> None:
+    my_counter: MyAsyncAPIContextCounter
+    async with registry as r:
+        my_counter = await r.aget(MyAsyncAPIContextCounter)
+        assert my_counter.entered_context_counter == 1
+        await r.aget(MyAsyncApi)
+        assert my_counter.entered_context_counter == 1
+    assert my_counter.exited_context_counter == 1
+
+
 async def test_async_context_outside_context_manager(registry: Registry) -> None:
     with pytest.raises(RegistryAPIError):
         # attempting to instantiate a class

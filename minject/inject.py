@@ -150,9 +150,7 @@ class _RegistryReference(Deferred[T_co]):
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         if _is_key_async(self._key):
-            result = await registry_impl._aresolve(self._key)
-            await registry_impl._push_async_context(result)
-            return result
+            return await registry_impl._aresolve(self._key)
         return registry_impl.resolve(self._key)
 
     @property

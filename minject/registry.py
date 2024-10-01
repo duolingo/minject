@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeV
 
 from typing_extensions import Concatenate, ParamSpec
 
-from minject.inject import _is_key_async, _RegistryReference
+from minject.inject import _is_key_async, _RegistryReference, reference
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
@@ -103,7 +103,7 @@ class Registry(Resolver):
         return self[key]
 
     async def _aresolve(self, key: "RegistryKey[T]") -> T:
-        result = await self._aget(key)
+        result = await self.aget(key)
         if result is None:
             raise KeyError(key, "could not be resolved")
         return result
@@ -241,6 +241,12 @@ class Registry(Resolver):
             # add to our list of all objects (this MUST happen after init so
             # any references come earlier in sequence and are destroyed first)
             self._objects.append(wrapper)
+
+            # after creating an object, enter the objects context
+            # if it is marked with the @async_context decorator.
+            if meta.is_async_context():
+                await self._push_async_context(obj)
+
             success = True
         finally:
             if not success:
@@ -333,7 +339,13 @@ class Registry(Resolver):
 
         return _unwrap(self._get_by_metadata(meta, default))
 
-    async def _aget(self, key: "RegistryKey[T]") -> Optional[T]:
+    async def aget(self, key: "RegistryKey[T]") -> Optional[T]:
+        """
+        Resolve objects marked with the @async_context decorator.
+        """
+        if not _is_key_async(key):
+            raise RegistryAPIError("cannot use aget outside of async context")
+
         if not self._async_can_proceed:
             raise RegistryAPIError("cannot use aget outside of async context")
 
@@ -374,23 +386,6 @@ class Registry(Resolver):
 
         # nothing has been registered for this metadata yet
         return None
-
-    async def aget(self, key: "RegistryKey[T]") -> Optional[T]:
-        """
-        Resolve objects marked with the @async_context decorator.
-        """
-        if not _is_key_async(key):
-            raise RegistryAPIError("cannot use aget outside of async context")
-
-        maybe_class = self._get_if_already_in_registry(key, _get_meta_from_key(key))
-        if maybe_class is not None:
-            return maybe_class
-
-        # this is done differently than the sync version because the async version
-        # requires that the top level context of key be entered, and contexts are entered
-        # in a RegistryReference's aresolve method
-        reference = _RegistryReference(key)
-        return await self._aresolve_resolvable(reference)
 
     async def __aenter__(self) -> "Registry":
         """
