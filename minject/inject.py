@@ -118,7 +118,7 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
     return isinstance(key, type)
 
 
-def _is_key_async(key: RegistryKey) -> bool:
+def _is_key_async(key: "RegistryKey[T]") -> bool:
     """
     Check whether a registry key is an async context manager
     marked for initialization within the registry (@async_context).
