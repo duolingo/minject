@@ -244,7 +244,7 @@ class Registry(Resolver):
 
             # after creating an object, enter the objects context
             # if it is marked with the @async_context decorator.
-            if meta.is_async_context():
+            if meta.is_async_context:
                 await self._push_async_context(obj)
 
             success = True

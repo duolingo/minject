@@ -86,14 +86,14 @@ def bind(
 
 def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     """
-    Decorator to declare that a class is as an async context manager
+    Declare that a class is as an async context manager
     that can be initialized by the registry through aget(). This
     is to distinguish the class from an async context manager that
     should not be initialized by the registry (an example of
     this being asyncio.Lock).
     """
     meta = _gen_meta(cls)
-    meta.update_async_context(True)
+    meta.is_async_context = True
     return cls
 
 
@@ -126,13 +126,13 @@ def _is_key_async(key: "RegistryKey[T]") -> bool:
     if isinstance(key, str):
         return False
     elif isinstance(key, RegistryMetadata):
-        return key.is_async_context()
+        return key.is_async_context
     else:
-        assert_type(key, type)
+        assert_type(key, Type[T])
         inject_metadata = _get_meta(key)
         if inject_metadata is None:
             return False
-        return inject_metadata.is_async_context()
+        return inject_metadata.is_async_context
 
 
 class _RegistryReference(Deferred[T_co]):
