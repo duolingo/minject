@@ -34,22 +34,20 @@ class Resolver(abc.ABC):
     def resolve(self, key: "RegistryKey[T]") -> T:
         ...
 
-    @abc.abstractmethod
     async def _aresolve(self, key: "RegistryKey[T]") -> T:
         """
         Resolve a key into an instance of that key. The key must be marked
         with the @async_context decorator.
         """
-        ...
+        raise NotImplementedError("Please implement _aresolve.")
 
-    @abc.abstractmethod
     async def _push_async_context(self, key: Any) -> Any:
         """
         Push an async context onto the context stack maintained by the Resolver.
         This is necessary to enter/close the context of an object
         marked with @async_context.
         """
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod

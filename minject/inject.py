@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeGuard, assert_type
 
 from minject.types import _AsyncContext
 
@@ -90,7 +90,7 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     that can be initialized by the registry through aget(). This
     is to distinguish the class from an async context manager that
     should not be initialized by the registry (an example of
-    this being asyncio.Lock()).
+    this being asyncio.Lock).
     """
     meta = _gen_meta(cls)
     meta.update_async_context(True)
@@ -127,13 +127,12 @@ def _is_key_async(key: RegistryKey) -> bool:
         return False
     elif isinstance(key, RegistryMetadata):
         return key.is_async_context()
-    elif isinstance(key, type):
-        try:  # type: ignore
-            inject_metadata = object.__getattribute__(key, _INJECT_METADATA_ATTR)
-            return inject_metadata.is_async_context()  # type: ignore
-        except AttributeError:
+    else:
+        assert_type(key, type)
+        inject_metadata = _get_meta(key)
+        if inject_metadata is None:
             return False
-    assert False, f"Unexpected key type: {key}"
+        return inject_metadata.is_async_context()
 
 
 class _RegistryReference(Deferred[T_co]):

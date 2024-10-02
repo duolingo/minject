@@ -4,7 +4,7 @@
 
 # Changelog
 
-## v1.1.0
+## v1.1.0-beta.1
 
 Add support for async Python. This version introduces the following methods and decorators:
 
