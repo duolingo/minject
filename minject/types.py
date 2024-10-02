@@ -27,7 +27,9 @@ class _MinimalMappingProtocol(Protocol[K_contra, V_co]):
 
 class _AsyncContext(Protocol):
     """
-    Protocol for any object that can be used as an async context manager.
+    Protocol for an object that can be marked with the @async_context
+    decorator. This is any async context manager that return Self from
+    it's __aenter__ method.
     """
 
     async def __aenter__(self: Self) -> Self:
