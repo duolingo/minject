@@ -3,7 +3,7 @@ from typing import Dict, Type
 
 import pytest
 
-from minject.inject import async_context, bind, config, nested_config, reference
+from minject.inject import async_context, bind, config, define, nested_config, reference
 from minject.registry import Registry, RegistryAPIError
 
 TEXT = "we love tests"
@@ -95,6 +95,15 @@ class MyAsyncApi:
     ) -> None:
         del exc_type, exc_value, traceback
         self.in_context = False
+
+
+MY_ASYNC_API_DEFINE = define(
+    MyAsyncApi,
+    text=TEXT,
+    dep_async=reference(MyDependencyAsync),
+    dep_not_specified=reference(MyDependencyNotSpecifiedAsync),
+    dep_context_counter=reference(MyAsyncAPIContextCounter),
+)
 
 
 @async_context
@@ -232,3 +241,20 @@ async def test_entering_already_entered_registry_throws(registry: Registry) -> N
         with pytest.raises(RegistryAPIError):
             async with r:
                 pass
+
+
+async def test_define(registry: Registry) -> None:
+    async with registry as r:
+        my_api = await r.aget(MY_ASYNC_API_DEFINE)
+        assert my_api.text == TEXT
+        assert my_api.in_context == True
+        assert my_api.dep_async.in_context == True
+        assert my_api.dep_not_specified.in_context == False
+        assert my_api.dep_context_counter.in_context == True
+        assert my_api.dep_context_counter.entered_context_counter == 1
+
+    assert my_api.in_context == False
+    assert my_api.dep_async.in_context == False
+    assert my_api.dep_not_specified.in_context == False
+    assert my_api.dep_context_counter.in_context == False
+    assert my_api.dep_context_counter.exited_context_counter == 1

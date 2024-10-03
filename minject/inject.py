@@ -105,8 +105,10 @@ def define(
     """Create a new registry key based on a class and optional bindings."""
     meta = _get_meta(base_class)
     if meta:
+        is_async = meta.is_async_context
         meta = RegistryMetadata(base_class, bindings=dict(meta.bindings))
         meta.update_bindings(**bindings)
+        meta.is_async_context = is_async
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
     meta._close = _close
