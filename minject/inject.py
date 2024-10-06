@@ -1,5 +1,6 @@
 """Collection of annotations to define how a class should be initialized by the registry."""
 
+import asyncio
 import itertools
 import os
 from typing import (
@@ -152,7 +153,7 @@ class _RegistryReference(Deferred[T_co]):
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         if _is_key_async(self._key):
             return await registry_impl._aresolve(self._key)
-        return registry_impl.resolve(self._key)
+        return await asyncio.to_thread(registry_impl.resolve, self._key)
 
     @property
     def type_of_object_referenced_in_key(self) -> "Type[T_co]":
@@ -328,7 +329,7 @@ class _RegistryConfig(Deferred[T_co]):
             return cast(T_co, self._default)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        return self.resolve(registry_impl)
+        return await asyncio.to_thread(self.resolve, registry_impl)
 
     @property
     def key(self) -> Optional[str]:
@@ -374,7 +375,7 @@ class _RegistryNestedConfig(Deferred[T_co]):
         return cast(T_co, sub)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
-        return self.resolve(registry_impl)
+        return await asyncio.to_thread(self.resolve, registry_impl)
 
 
 def nested_config(
@@ -436,7 +437,7 @@ class _RegistrySelf(Deferred[Resolver]):
         return registry_impl
 
     async def aresolve(self, registry_impl: Resolver) -> Resolver:
-        return self.resolve(registry_impl)
+        return await asyncio.to_thread(self.resolve, registry_impl)
 
 
 self_tag = _RegistrySelf()
