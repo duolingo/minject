@@ -91,7 +91,7 @@ class Registry(Resolver):
         self._lock = RLock()
 
         self._async_context_stack: AsyncExitStack = AsyncExitStack()
-        self._async_can_proceed = False
+        self._async_entered = False
 
         if config is not None:
             self._config._from_dict(config)
@@ -341,7 +341,7 @@ class Registry(Resolver):
         if not _is_key_async(key):
             raise RegistryAPIError("cannot use aget outside of async context")
 
-        if not self._async_can_proceed:
+        if not self._async_entered:
             raise RegistryAPIError("cannot use aget outside of async context")
 
         if isinstance(key, str):
@@ -386,11 +386,11 @@ class Registry(Resolver):
         """
         Mark a registry instance as ready for resolving async objects.
         """
-        if self._async_can_proceed:
+        if self._async_entered:
             raise RegistryAPIError(
                 "Attempting to enter registry context while already in context. This should not happen."
             )
-        self._async_can_proceed = True
+        self._async_entered = True
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
@@ -398,11 +398,11 @@ class Registry(Resolver):
         Closes the registry. Closes all contexts on the registry's context stack
         and then closes the registry itself with regisry.close().
         """
-        if not self._async_can_proceed:
+        if not self._async_entered:
             raise RegistryAPIError(
                 "Attempting to exit registry context while not in context. This should not happen."
             )
-        self._async_can_proceed = False
+        self._async_entered = False
         # close all objects in the registry
         await self._async_context_stack.aclose()
         await asyncio.to_thread(self.close)
