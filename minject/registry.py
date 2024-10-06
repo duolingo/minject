@@ -125,12 +125,6 @@ class Registry(Resolver):
     def _resolve(self, value: Resolvable[T]) -> T:
         return resolve_value(self, value)
 
-    async def _aresolve_resolvable(self, value: Resolvable[T]) -> T:
-        """
-        Async version of _resolve.
-        """
-        return await aresolve_value(self, value)
-
     @_synchronized
     def close(self) -> None:
         """Close all objects contained in the registry."""
