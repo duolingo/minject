@@ -123,9 +123,15 @@ def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
 
 def _is_key_async(key: "RegistryKey[T]") -> bool:
     """
-    Check whether a registry key is an async context manager
-    marked for initialization within the registry (@async_context).
+    Check whether a registry key is an "async", or in other words
+    marked for async initialization within the registry with @async_context.
+    If a key is "async", it can be initialized through Registry.aget.
     """
+    # At present, we only consider objects with RegistryMetadata.is_async_context
+    # set to True to be "async", or able to be initialized through Registry.aget.
+    # In the future, we likely will support initializing both async and non-async
+    # objects through aget, but we are deferring implementing this until
+    # we have a bit more experience using the async Registry API.
     if isinstance(key, str):
         return False
     elif isinstance(key, RegistryMetadata):

@@ -335,13 +335,10 @@ class Registry(Resolver):
         Resolve objects marked with the @async_context decorator.
         """
         if not _is_key_async(key):
-            raise AssertionError("cannot use aget outside of async context")
+            raise AssertionError("key must be async to use aget")
 
         if not self._async_entered:
             raise AssertionError("cannot use aget outside of async context")
-
-        if isinstance(key, str):
-            raise AssertionError("cannot use aget with string keys. Use get instead.")
 
         meta = _get_meta_from_key(key)
         maybe_class = self._get_if_already_in_registry(key, meta)
