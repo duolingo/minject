@@ -17,7 +17,13 @@ except ImportError:
     # and moved it out of the try - except block
     # __all__ = "to_thread",
 
-    async def to_thread(func, /, *args, **kwargs):
+    # Minject Specific Edit: I removed the '/' from the function signature,
+    # as this is not supported in python 3.7 (added in python 3.8).
+    # The '/' forces that "func" be passed positionally (I.E. first argument
+    # to to_thread). Users of this extension must be careful to pass the
+    # function as the first argument.
+    # original asyncio source: "async def to_thread(func, /, *args, **kwargs):"
+    async def to_thread(func, *args, **kwargs):
         """Asynchronously run function *func* in a separate thread.
 
         Any *args and **kwargs supplied for this function are directly passed
