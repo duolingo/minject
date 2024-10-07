@@ -4,7 +4,7 @@ from typing import Dict, Type
 import pytest
 
 from minject.inject import async_context, bind, config, define, nested_config, reference
-from minject.registry import Registry, RegistryAPIError
+from minject.registry import Registry
 
 TEXT = "we love tests"
 
@@ -197,7 +197,7 @@ async def test_multiple_instantiation_mixed(registry: Registry) -> None:
 
 
 async def test_async_context_outside_context_manager(registry: Registry) -> None:
-    with pytest.raises(RegistryAPIError):
+    with pytest.raises(AssertionError):
         # attempting to instantiate a class
         # marked with @async_context without
         # being in an async context should
@@ -206,13 +206,13 @@ async def test_async_context_outside_context_manager(registry: Registry) -> None
 
 
 async def test_try_instantiate_async_class_with_sync_api(registry: Registry) -> None:
-    with pytest.raises(RegistryAPIError):
+    with pytest.raises(AssertionError):
         # attempting to instantiate a class
         # marked with @async_context using sync API
         # should raise an error
         _ = registry[MyDependencyAsync]
 
-    with pytest.raises(RegistryAPIError):
+    with pytest.raises(AssertionError):
         # still throws an error even when registry context
         # has been entered
         async with registry as r:
@@ -238,7 +238,7 @@ async def test_config_in_async(registry: Registry) -> None:
 
 async def test_entering_already_entered_registry_throws(registry: Registry) -> None:
     async with registry as r:
-        with pytest.raises(RegistryAPIError):
+        with pytest.raises(AssertionError):
             async with r:
                 pass
 

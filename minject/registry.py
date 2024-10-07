@@ -22,15 +22,6 @@ R = TypeVar("R")
 P = ParamSpec("P")
 
 
-class RegistryAPIError(Exception):
-    """
-    Error representing misuse of the Registry API.
-    Do not catch this error.
-    """
-
-    ...
-
-
 class _AutoOrNone:
     def __nonzero__(self):
         return False
@@ -322,7 +313,7 @@ class Registry(Resolver):
             The requested object or default if not found.
         """
         if _is_key_async(key):
-            raise RegistryAPIError(
+            raise AssertionError(
                 "cannot use synchronous get on async object (object marked with @async_context)"
             )
 
@@ -344,13 +335,13 @@ class Registry(Resolver):
         Resolve objects marked with the @async_context decorator.
         """
         if not _is_key_async(key):
-            raise RegistryAPIError("cannot use aget outside of async context")
+            raise AssertionError("cannot use aget outside of async context")
 
         if not self._async_entered:
-            raise RegistryAPIError("cannot use aget outside of async context")
+            raise AssertionError("cannot use aget outside of async context")
 
         if isinstance(key, str):
-            raise RegistryAPIError("cannot use aget with string keys. Use get instead.")
+            raise AssertionError("cannot use aget with string keys. Use get instead.")
 
         meta = _get_meta_from_key(key)
         maybe_class = self._get_if_already_in_registry(key, meta)
@@ -392,7 +383,7 @@ class Registry(Resolver):
         Mark a registry instance as ready for resolving async objects.
         """
         if self._async_entered:
-            raise RegistryAPIError(
+            raise AssertionError(
                 "Attempting to enter registry context while already in context. This should not happen."
             )
         self._async_entered = True
@@ -404,7 +395,7 @@ class Registry(Resolver):
         and then closes the registry itself with regisry.close().
         """
         if not self._async_entered:
-            raise RegistryAPIError(
+            raise AssertionError(
                 "Attempting to exit registry context while not in context. This should not happen."
             )
         self._async_entered = False
