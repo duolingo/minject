@@ -1,7 +1,6 @@
 import unittest
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import lru_cache
 from random import shuffle
 from typing import Sequence
 
@@ -464,12 +463,10 @@ class RegistryTestCase(unittest.TestCase):
         query_per_class = 2
         num_classes = num_queries // query_per_class
 
-        @lru_cache(maxsize=None)
-        def new_type(i):
-            return type(f"NewType{i}", (), {})
+        types = [type(f"NewType{i}", (), {}) for i in range(num_classes)]
 
         def lazy_load_object(i):
-            return self.registry[new_type(i % num_classes)]
+            return self.registry[types[i % num_classes]]
 
         with ThreadPoolExecutor(max_workers=query_per_class) as executor:
             futures = [executor.submit(lazy_load_object, i) for i in range(num_queries)]
@@ -477,8 +474,8 @@ class RegistryTestCase(unittest.TestCase):
 
         # group results by object id, and assert that each type is only instantiated once If each type is
         # instantiated only once but accessed N times, we would see N objects for each type in the counter.
-        counter = Counter(map(id, results))
-        assert all(count == query_per_class for count in counter.values())
+        for count in Counter(map(id, results)).values():
+            self.assertEqual(count, query_per_class)
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
