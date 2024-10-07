@@ -106,13 +106,14 @@ class RegistryMetadata(Generic[T_co]):
         cls: Type[T_co],
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
+        is_async_context: bool = False,
     ):
         self._cls = cls
         self._bindings = bindings or {}
 
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
-        self._is_async_context = False
+        self.is_async_context = is_async_context
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -142,20 +143,6 @@ class RegistryMetadata(Generic[T_co]):
         """
         # TODO: 'lock' the bindings once added to the registry to make above note unnecessary
         self._bindings.update(bindings)
-
-    @property
-    def is_async_context(self) -> bool:
-        """
-        Returns the value of the async context flag for this metadata.
-        """
-        return self._is_async_context
-
-    @is_async_context.setter
-    def is_async_context(self, is_async_context: bool) -> None:
-        """
-        Set the async context flag for this metadata.
-        """
-        self._is_async_context = is_async_context
 
     def _new_object(self) -> T_co:
         return self._cls.__new__(self._cls)
