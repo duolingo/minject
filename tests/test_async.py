@@ -4,7 +4,7 @@ from typing import Dict, Type
 import pytest
 
 from minject.inject import async_context, bind, config, define, nested_config, reference
-from minject.registry import Registry
+from minject.registry import AUTO_OR_NONE, Registry
 
 TEXT = "we love tests"
 
@@ -65,6 +65,12 @@ class MyAsyncAPIContextCounter:
         del exc_type, exc_value, traceback
         self.exited_context_counter += 1
         self.in_context = False
+
+
+@bind(dep_async=reference(MyDependencyAsync))
+class MySyncClassWithAsyncDependency:
+    def __init__(self, dep_async: MyDependencyAsync) -> None:
+        self.dep_async = dep_async
 
 
 @async_context
@@ -258,3 +264,13 @@ async def test_define(registry: Registry) -> None:
     assert my_api.dep_not_specified.in_context == False
     assert my_api.dep_context_counter.in_context == False
     assert my_api.dep_context_counter.exited_context_counter == 1
+
+
+def test_get_item_sync_class_async_dependency_throws(registry: Registry) -> None:
+    with pytest.raises(AssertionError):
+        _ = registry[MySyncClassWithAsyncDependency]
+
+
+def test_get_sync_class_async_dependency_throws(registry: Registry) -> None:
+    with pytest.raises(AssertionError):
+        _ = registry.get(MySyncClassWithAsyncDependency, AUTO_OR_NONE)
