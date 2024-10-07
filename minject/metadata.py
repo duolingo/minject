@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
 )
 
-from .model import DeferredAny, RegistryKey
+from .model import DeferredAny, RegistryKey, resolve_value
 from .types import Kwargs
 
 if TYPE_CHECKING:
@@ -155,7 +155,7 @@ class RegistryMetadata(Generic[T_co]):
     def _init_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
         init_kwargs = {}
         for name_, value in self._bindings.items():
-            init_kwargs[name_] = registry_impl._resolve(value)
+            init_kwargs[name_] = resolve_value(registry_impl, value)
 
         self._cls.__init__(obj, **init_kwargs)
 

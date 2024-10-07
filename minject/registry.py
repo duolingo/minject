@@ -86,9 +86,6 @@ class Registry(Resolver):
     def resolve(self, key: "RegistryKey[T]") -> T:
         return self[key]
 
-    def _resolve(self, value: Resolvable[T]) -> T:
-        return resolve_value(self, value)
-
     @_synchronized
     def close(self) -> None:
         """Close all objects contained in the registry."""
