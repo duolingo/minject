@@ -321,6 +321,11 @@ class Registry(Resolver):
         Returns:
             The requested object or default if not found.
         """
+        if _is_key_async(key):
+            raise RegistryAPIError(
+                "cannot use synchronous get on async object (object marked with @async_context)"
+            )
+
         if key == object:
             return None  # NEVER auto-init plain object
 
@@ -417,11 +422,6 @@ class Registry(Resolver):
         Raises:
             KeyError: if the object is not registered and cannot be generated.
         """
-        if _is_key_async(key):
-            raise RegistryAPIError(
-                "cannot use synchronous get on async object (object marked with @async_context)"
-            )
-
         obj = self.get(key, default=AUTO_OR_NONE)
         if obj is None or obj is AUTO_OR_NONE:
             raise KeyError(key)
