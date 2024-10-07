@@ -4,7 +4,9 @@ are not available in Python 3.7.
 """
 
 try:
-    from asyncio import to_thread
+    # Python 3.7 mypy raises attr-defined error for to_thread, so
+    # we must ignore it here.
+    from asyncio import to_thread  # type: ignore[attr-defined]
 # This is copy pasted from here: https://github.com/python/cpython/blob/03775472cc69e150ced22dc30334a7a202fc0380/Lib/asyncio/threads.py#L1-L25
 except ImportError:
     """High-level support for working with threads in asyncio"""
@@ -20,8 +22,9 @@ except ImportError:
     # Minject Specific Edit: I removed the '/' from the function signature,
     # as this is not supported in python 3.7 (added in python 3.8).
     # The '/' forces that "func" be passed positionally (I.E. first argument
-    # to to_thread). Users of this extension must be careful to pass the
-    # function as the first argument.
+    # to to_thread). Users of this extension must be careful to pass the argument
+    # to "func" positionally, or there could be different behavior
+    # when using minject in python 3.7 and python 3.9+.
     # original asyncio source: "async def to_thread(func, /, *args, **kwargs):"
     async def to_thread(func, *args, **kwargs):
         """Asynchronously run function *func* in a separate thread.
