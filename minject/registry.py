@@ -1,5 +1,4 @@
 """The Registry itself is a runtime collection of initialized classes."""
-import asyncio
 import functools
 import logging
 from contextlib import AsyncExitStack
@@ -9,6 +8,7 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeV
 
 from typing_extensions import Concatenate, ParamSpec
 
+from minject.asyncio_extensions import to_thread
 from minject.inject import _is_key_async, _RegistryReference, reference
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
@@ -395,7 +395,7 @@ class Registry(Resolver):
         self._async_entered = False
         # close all objects in the registry
         await self._async_context_stack.aclose()
-        await asyncio.to_thread(self.close)
+        await to_thread(self.close)
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.
