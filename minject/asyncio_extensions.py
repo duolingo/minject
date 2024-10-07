@@ -24,9 +24,10 @@ except ImportError:
     # The '/' forces that "func" be passed positionally (I.E. first argument
     # to to_thread). Users of this extension must be careful to pass the argument
     # to "func" positionally, or there could be different behavior
-    # when using minject in python 3.7 and python 3.9+.
+    # when using minject in python 3.7 and python 3.9+. I need to add a "type: ignore"
+    # to avoid mypy errors related to defining function with a different signature.
     # original asyncio source: "async def to_thread(func, /, *args, **kwargs):"
-    async def to_thread(func, *args, **kwargs):
+    async def to_thread(func, *args, **kwargs):  # type: ignore
         """Asynchronously run function *func* in a separate thread.
 
         Any *args and **kwargs supplied for this function are directly passed
