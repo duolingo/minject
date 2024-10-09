@@ -207,7 +207,7 @@ class Registry(Resolver):
 
     async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
         """
-        async version of _register_by_metadata. Calls _aiint_object instead of _init_object
+        async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
         """
         LOG.debug("registering %s", meta)
 
@@ -338,12 +338,12 @@ class Registry(Resolver):
             raise AssertionError("cannot use aget outside of async context")
 
         meta = _get_meta_from_key(key)
-        maybe_class = self._get_if_already_in_registry(key, meta)
-        if maybe_class is not None:
-            return maybe_class
+        maybe_initialized_obj = self._get_if_already_in_registry(key, meta)
+        if maybe_initialized_obj is not None:
+            return maybe_initialized_obj
 
-        by_meta = await self._aget_by_metadata(meta)
-        return _unwrap(by_meta)
+        initialized_obj = await self._aget_by_metadata(meta)
+        return _unwrap(initialized_obj)
 
     def _get_if_already_in_registry(
         self, key: "RegistryKey[T]", meta: "RegistryMetadata[T]"
