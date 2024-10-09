@@ -333,3 +333,15 @@ async def test_exit_logic_failure(registry: Registry) -> None:
     assert my_cls.entered == False
     assert my_cls.sync_close_dep.closed == True
 
+
+async def test_async_contains(registry: Registry) -> None:
+    async with registry as r:
+        assert (MyAsyncApi in r) is False
+        assert (MyDependencyAsync in r) is False
+        assert (MyDependencyNotSpecifiedAsync in r) is False
+
+        _ = await r.aget(MyAsyncApi)
+
+        assert (MyAsyncApi in r) is True
+        assert (MyDependencyAsync in r) is True
+        assert (MyDependencyNotSpecifiedAsync in r) is True
