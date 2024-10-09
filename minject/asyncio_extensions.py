@@ -3,12 +3,12 @@ This module provides fallback implementations of asyncio features that
 are not available in Python 3.7.
 """
 
-try:
-    # Python 3.7 mypy raises attr-defined error for to_thread, so
-    # we must ignore it here.
-    from asyncio import to_thread  # type: ignore[attr-defined]
+import asyncio
+
+if hasattr(asyncio, "to_thread"):
+    from asyncio import to_thread
 # This is copy pasted from here: https://github.com/python/cpython/blob/03775472cc69e150ced22dc30334a7a202fc0380/Lib/asyncio/threads.py#L1-L25
-except ImportError:
+else:
     """High-level support for working with threads in asyncio"""
 
     import contextvars
