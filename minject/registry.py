@@ -360,10 +360,12 @@ class Registry(Resolver):
         if not isinstance(key, type):
             return None
 
-        # If the class has no metadata, but a parent has been registered in registry,
-        # return the registered parent. If the class has metadata, we should not
-        # check parents, we must use the metadata attached to the class to
-        # construct the object.
+        # If the class (key) has no metadata, but an object exists in the registry
+        # that implements an interface the class implements, return the object
+        # in the registry. If the class has metadata, we should not
+        # check the registry for objects that implement interfaces implemented by
+        # the class, as we must use the metadata attached to the class to construct
+        # the object.
         meta_no_bases = _get_meta(key, include_bases=False)
         obj_list = self._by_iface.get(key)
         if meta_no_bases is None and obj_list:
