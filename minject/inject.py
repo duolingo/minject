@@ -2,11 +2,25 @@
 
 import itertools
 import os
-from typing import Any, Callable, Dict, Optional, Sequence, Type, TypeVar, Union, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeGuard, assert_type
 
-from .metadata import RegistryMetadata, _gen_meta, _get_meta
+from minject.asyncio_extensions import to_thread
+from minject.types import _AsyncContext
+
+from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta
 from .model import (
     Deferred,
     DeferredAny,
@@ -14,10 +28,11 @@ from .model import (
     Resolver,
     resolve_value,
 )
-from .types import _MinimalMappingProtocol
+from .types import _AsyncContext, _MinimalMappingProtocol
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
+T_async_context = TypeVar("T_async_context", bound=_AsyncContext)
 R = TypeVar("R")
 
 
@@ -70,6 +85,19 @@ def bind(
     return wrap
 
 
+def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
+    """
+    Declare that a class is as an async context manager
+    that can be initialized by the registry through aget(). This
+    is to distinguish the class from an async context manager that
+    should not be initialized by the registry (an example of
+    this being asyncio.Lock).
+    """
+    meta = _gen_meta(cls)
+    meta.is_async_context = True
+    return cls
+
+
 def define(
     base_class: Type[T],
     _close: Optional[Callable[[T], None]] = None,
@@ -78,7 +106,9 @@ def define(
     """Create a new registry key based on a class and optional bindings."""
     meta = _get_meta(base_class)
     if meta:
-        meta = RegistryMetadata(base_class, bindings=dict(meta.bindings))
+        meta = RegistryMetadata(
+            base_class, is_async_context=meta.is_async_context, bindings=dict(meta.bindings)
+        )
         meta.update_bindings(**bindings)
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
@@ -89,6 +119,29 @@ def define(
 def _is_type(key: "RegistryKey[T]") -> TypeGuard[Type[T]]:
     """A typeguard function to see if a RegistryKey[T] is-a Type[T]"""
     return isinstance(key, type)
+
+
+def _is_key_async(key: "RegistryKey[T]") -> bool:
+    """
+    Check whether a registry key is an "async", or in other words
+    marked for async initialization within the registry with @async_context.
+    If a key is "async", it can be initialized through Registry.aget.
+    """
+    # At present, we only consider objects with RegistryMetadata.is_async_context
+    # set to True to be "async", or able to be initialized through Registry.aget.
+    # In the future, we likely will support initializing both async and non-async
+    # objects through aget, but we are deferring implementing this until
+    # we have a bit more experience using the async Registry API.
+    if isinstance(key, str):
+        return False
+    elif isinstance(key, RegistryMetadata):
+        return key.is_async_context
+    else:
+        assert_type(key, Type[T])
+        inject_metadata = _get_meta(key)
+        if inject_metadata is None:
+            return False
+        return inject_metadata.is_async_context
 
 
 class _RegistryReference(Deferred[T_co]):
@@ -102,6 +155,11 @@ class _RegistryReference(Deferred[T_co]):
 
     def resolve(self, registry_impl: Resolver) -> T_co:
         return registry_impl.resolve(self._key)
+
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        if _is_key_async(self._key):
+            return await registry_impl._aresolve(self._key)
+        return await to_thread(registry_impl.resolve, self._key)
 
     @property
     def type_of_object_referenced_in_key(self) -> "Type[T_co]":
@@ -188,6 +246,9 @@ class _RegistryFunction(Deferred[T_co]):
             kwargs[key] = resolve_value(registry_impl, arg)
         return self.func()(*args, **kwargs)
 
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        raise NotImplementedError("Have not implemented async registry function")
+
     def func(self) -> Callable[..., T_co]:
         return self._func
 
@@ -273,6 +334,9 @@ class _RegistryConfig(Deferred[T_co]):
         else:
             return cast(T_co, self._default)
 
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        return await to_thread(self.resolve, registry_impl)
+
     @property
     def key(self) -> Optional[str]:
         return self._key
@@ -315,6 +379,9 @@ class _RegistryNestedConfig(Deferred[T_co]):
             else:
                 return self._default
         return cast(T_co, sub)
+
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        return await to_thread(self.resolve, registry_impl)
 
 
 def nested_config(
@@ -374,6 +441,9 @@ class _RegistrySelf(Deferred[Resolver]):
 
     def resolve(self, registry_impl: Resolver) -> Resolver:
         return registry_impl
+
+    async def aresolve(self, registry_impl: Resolver) -> Resolver:
+        return await to_thread(self.resolve, registry_impl)
 
 
 self_tag = _RegistrySelf()
