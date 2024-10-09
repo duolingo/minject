@@ -394,8 +394,13 @@ class Registry(Resolver):
             )
         self._async_entered = False
         # close all objects in the registry
-        await self._async_context_stack.aclose()
-        await to_thread(self.close)
+        try:
+            await self._async_context_stack.aclose()
+        finally:
+            # as we currently only support async -> sync transitions,
+            # a sync class cannot depend on an async class, and thus we may
+            # safely close all sync classes after closing all async classes.
+            await to_thread(self.close)
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.

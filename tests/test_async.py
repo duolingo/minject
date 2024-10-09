@@ -73,6 +73,38 @@ class MySyncClassWithAsyncDependency:
         self.dep_async = dep_async
 
 
+@bind(_close=lambda self: self.close())
+class MySyncClassWithCloseMethod:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+@async_context
+@bind(sync_close_dep=reference(MySyncClassWithCloseMethod))
+class MyAsyncClassWithSyncCloseDependency:
+    def __init__(
+        self, sync_close_dep: "MySyncClassWithCloseMethod", will_throw: bool = False
+    ) -> None:
+        self.sync_close_dep = sync_close_dep
+        self.entered = False
+        self.will_throw = will_throw
+
+    async def __aenter__(self) -> "MyAsyncClassWithSyncCloseDependency":
+        self.entered = True
+        return self
+
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
+    ) -> None:
+        del exc_type, exc_value, traceback
+        self.entered = False
+        if self.will_throw:
+            raise ValueError("This is a test error")
+
+
 @async_context
 @bind(text=TEXT)
 @bind(dep_async=reference(MyDependencyAsync))
@@ -274,3 +306,30 @@ def test_get_item_sync_class_async_dependency_throws(registry: Registry) -> None
 def test_get_sync_class_async_dependency_throws(registry: Registry) -> None:
     with pytest.raises(AssertionError):
         _ = registry.get(MySyncClassWithAsyncDependency, AUTO_OR_NONE)
+
+
+async def test_exit_logic_success(registry: Registry) -> None:
+    async with registry as r:
+        my_cls = await r.aget(MyAsyncClassWithSyncCloseDependency)
+        assert my_cls.entered == True
+        assert my_cls.sync_close_dep.closed == False
+
+    assert my_cls.entered == False
+    assert my_cls.sync_close_dep.closed == True
+
+
+async def test_exit_logic_failure(registry: Registry) -> None:
+    with pytest.raises(ValueError):
+        async with registry as r:
+            bindings = define(
+                MyAsyncClassWithSyncCloseDependency,
+                sync_close_dep=reference(MySyncClassWithCloseMethod),
+                will_throw=True,
+            )
+            my_cls = await r.aget(bindings)
+            assert my_cls.entered == True
+            assert my_cls.sync_close_dep.closed == False
+
+    assert my_cls.entered == False
+    assert my_cls.sync_close_dep.closed == True
+
