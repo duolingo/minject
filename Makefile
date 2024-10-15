@@ -28,8 +28,8 @@ $(HATCH_BIN): $(VENV_TARGET)
 
 
 # test suites
-.PHONY: test test-examples test-unit
-test: test-examples test-unit ## run all test suites
+.PHONY: test test-examples test-unit test-types
+test: test-examples test-unit test-types ## run all test suites
 ALL_EXAMPLES := $(wildcard docs/examples/*.py)
 test-examples: $(ALL_EXAMPLES) ## run example code test suite
 .PHONY: $(ALL_EXAMPLES)
@@ -37,3 +37,5 @@ $(ALL_EXAMPLES): $(HATCH_BIN)
 	$(HATCH_CMD) $@
 test-unit: $(VENV_TARGET) ## run unit test suite
 	$(HATCH_CMD) -m unittest discover -s tests
+test-types:
+	$(PYTHON_CMD) -m hatch run types:check

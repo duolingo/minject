@@ -108,7 +108,7 @@ def inject_field(binding=_T, **attr_field_kwargs) -> Any:
     # declaration. Extract the name of the field.
     field_frame = stack[1]
     name = ""
-    if len(field_frame.code_context) > 0:
+    if field_frame.code_context:
         code = field_frame.code_context[0].strip()
         name_and_type = code.split("=", maxsplit=1)[0].rstrip().lstrip()
         name = name_and_type.split(":", maxsplit=1)[0].rstrip().lstrip()
@@ -122,9 +122,7 @@ def inject_field(binding=_T, **attr_field_kwargs) -> Any:
     # bindings, so double-check that that assumption holds.
     # (If not, our inferred field name is probably wrong too!)
     class_frame = stack[2]
-    if len(class_frame.code_context) < 1 or not class_frame.code_context[0].strip().startswith(
-        "class "
-    ):
+    if not (class_frame.code_context and class_frame.code_context[0].strip().startswith("class ")):
         raise ValueError(
             "Could not find line containing class declaration. Are you calling inject_field properly?"
         )
@@ -158,9 +156,15 @@ def inject_define(
                 "Could not find line containing class declaration. Are you calling inject_define properly?"
             )
 
+        class_filename = inspect.getsourcefile(cls)
+        if class_filename is None:
+            raise ValueError(
+                "Could not find filename of class declaration. Are you calling inject_define properly?"
+            )
+
         # get bindings to apply to the class
         key = _BindingKey(
-            filename=inspect.getsourcefile(cls),
+            filename=class_filename,
             class_lineno=class_lineno,
         )
         bindings = _key_binding_mapping[key]
