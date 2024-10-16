@@ -27,6 +27,29 @@ def test_registry_instantiation() -> None:
     assert registry_instance.e == True
 
 
+def test_registry_nested_name_collision() -> None:
+    @inject_define
+    class TestClass:
+        b: float = inject_field(binding=10.0)
+        c: int = 100
+        f: int = field(default=1000)
+        g: int = inject_field(binding=1, default=2)
+
+        def sum_nums(self) -> int:
+            return self.c + int(self.b) + self.g + self.f
+
+        @inject_define
+        class TestClass:
+            b: float = inject_field(binding=0.0)
+            c: int = 0
+            f: int = field(default=0)
+            g: int = inject_field(binding=0, default=2)
+
+    registry = Registry()
+    registry_instance = registry[TestClass]
+    assert registry_instance.sum_nums() == 1111
+
+
 def test_bind_with_define() -> None:
     @bind(a=4)  # type: ignore
     @inject_define
