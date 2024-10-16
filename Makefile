@@ -36,6 +36,6 @@ test-examples: $(ALL_EXAMPLES) ## run example code test suite
 $(ALL_EXAMPLES): $(HATCH_BIN)
 	$(HATCH_CMD) run python $@
 test-unit: $(VENV_TARGET) ## run unit test suite
-	$(HATCH_CMD) test --all
+	$(HATCH_CMD) test --all --parallel --randomize
 test-types:
 	$(HATCH_CMD) run types:check
