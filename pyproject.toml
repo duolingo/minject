@@ -30,6 +30,7 @@ dependencies = [
     "pytest-cov",
     "pytest-mock",
     "pytest-xdist",
+    'pytest-asyncio',
     "typing",
 ]
 
@@ -43,6 +44,7 @@ dependencies = [
     'pytest',
     'pytest-mock',
     'pytest-randomly',
+    'pytest-asyncio',
     'pytest-rerunfailures',
     'pytest-xdist[psutil]',
 ]

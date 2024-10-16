@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
 )
 
-from .model import DeferredAny, RegistryKey, resolve_value
+from .model import DeferredAny, RegistryKey, aresolve_value, resolve_value
 from .types import Kwargs
 
 if TYPE_CHECKING:
@@ -106,12 +106,14 @@ class RegistryMetadata(Generic[T_co]):
         cls: Type[T_co],
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
+        is_async_context: bool = False,
     ):
         self._cls = cls
         self._bindings = bindings or {}
 
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
+        self.is_async_context = is_async_context
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -157,6 +159,16 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = resolve_value(registry_impl, value)
 
+        self._cls.__init__(obj, **init_kwargs)
+
+    async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
+        """
+        asynchronous version of _init_object. Calls _aresolve instead
+        of _resolve.
+        """
+        init_kwargs = {}
+        for name_, value in self._bindings.items():
+            init_kwargs[name_] = await aresolve_value(registry_impl, value)
         self._cls.__init__(obj, **init_kwargs)
 
     def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]

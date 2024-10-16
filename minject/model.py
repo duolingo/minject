@@ -34,6 +34,21 @@ class Resolver(abc.ABC):
     def resolve(self, key: "RegistryKey[T]") -> T:
         ...
 
+    async def _aresolve(self, key: "RegistryKey[T]") -> T:
+        """
+        Resolve a key into an instance of that key. The key must be marked
+        with the @async_context decorator.
+        """
+        raise NotImplementedError("Please implement _aresolve.")
+
+    async def _push_async_context(self, key: Any) -> Any:
+        """
+        Push an async context onto the context stack maintained by the Resolver.
+        This is necessary to enter/close the context of an object
+        marked with @async_context.
+        """
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def config(self) -> RegistryConfigWrapper:
@@ -52,6 +67,15 @@ class Deferred(abc.ABC, Generic[T_co]):
     def resolve(self, registry_impl: Resolver) -> T_co:
         ...
 
+    @abc.abstractmethod
+    async def aresolve(self, registry_impl: Resolver) -> T_co:
+        """
+        Resolve a deferred object into an instance of the object. The object,
+        may or may not be asynchronous. If the object is asynchronous (marked with @async_context),
+        resolve the object asynchronously. Otherwise, resolve synchronously.
+        """
+        ...
+
 
 Resolvable = Union[Deferred[T_co], T_co]
 # Union of Deferred and Any is just Any, but want to call out that a Deffered is quite common
@@ -67,5 +91,15 @@ def resolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
     """
     if isinstance(value, Deferred):
         return value.resolve(registry_impl)
+    else:
+        return value
+
+
+async def aresolve_value(registry_impl: Resolver, value: Resolvable[T]) -> T:
+    """
+    Async version of resolve_value, which calls aresolve on Deferred instances.
+    """
+    if isinstance(value, Deferred):
+        return await value.aresolve(registry_impl)
     else:
         return value

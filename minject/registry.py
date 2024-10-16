@@ -1,14 +1,19 @@
 """The Registry itself is a runtime collection of initialized classes."""
 import functools
 import logging
+from contextlib import AsyncExitStack
+from textwrap import dedent
 from threading import RLock
-from typing import Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
+from minject.asyncio_extensions import to_thread
+from minject.inject import _is_key_async, _RegistryReference, reference
+
 from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
-from .model import RegistryKey, Resolvable, Resolver, resolve_value
+from .model import RegistryKey, Resolvable, Resolver, aresolve_value, resolve_value
 
 LOG = logging.getLogger(__name__)
 
@@ -76,6 +81,9 @@ class Registry(Resolver):
 
         self._lock = RLock()
 
+        self._async_context_stack: AsyncExitStack = AsyncExitStack()
+        self._async_entered = False
+
         if config is not None:
             self._config._from_dict(config)
 
@@ -85,6 +93,26 @@ class Registry(Resolver):
 
     def resolve(self, key: "RegistryKey[T]") -> T:
         return self[key]
+
+    async def _aresolve(self, key: "RegistryKey[T]") -> T:
+        result = await self.aget(key)
+        if result is None:
+            raise KeyError(key, "could not be resolved")
+        return result
+
+    async def _push_async_context(self, key: Any) -> Any:
+        result = await self._async_context_stack.enter_async_context(key)
+        if result is not key:
+            raise ValueError(
+                dedent(
+                    """
+                Classes decorated with @async_context must
+                return the same value from __aenter__ as they do
+                from their constructor. Hint: __aenter__ should
+                return self.
+                """
+                ).strip()
+            )
 
     @_synchronized
     def close(self) -> None:
@@ -177,6 +205,38 @@ class Registry(Resolver):
 
         return wrapper
 
+    async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
+        """
+        async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
+        """
+        LOG.debug("registering %s", meta)
+
+        # allocate the object (but don't initialize yet)
+        obj = meta._new_object()
+
+        # add to the registry (done before init in case of circular reference)
+        wrapper = self._set_by_metadata(meta, obj, _global=False)
+
+        success = False
+        try:
+            # initialize the object
+            await meta._ainit_object(obj, self)
+            # add to our list of all objects (this MUST happen after init so
+            # any references come earlier in sequence and are destroyed first)
+            self._objects.append(wrapper)
+
+            # after creating an object, enter the objects context
+            # if it is marked with the @async_context decorator.
+            if meta.is_async_context:
+                await self._push_async_context(obj)
+
+            success = True
+        finally:
+            if not success:
+                self._remove_by_metadata(meta, wrapper, _global=False)
+
+        return wrapper
+
     @_synchronized
     def _get_by_metadata(
         self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
@@ -197,6 +257,17 @@ class Registry(Resolver):
             return RegistryWrapper(cast(T, default))
         else:
             return None
+
+    async def _aget_by_metadata(self, meta: RegistryMetadata[T]) -> Optional[RegistryWrapper[T]]:
+        """
+        async version of _get_by_metadata. The default argument has been removed
+        from the signature, as there is no use case for it at the time of writing.
+        Please make a feature request if you need this functionality.
+        """
+        if meta in self._by_meta:
+            return self._by_meta[meta]
+
+        return await self._aregister_by_metadata(meta)
 
     @_synchronized
     def __len__(self) -> int:
@@ -238,6 +309,11 @@ class Registry(Resolver):
         Returns:
             The requested object or default if not found.
         """
+        if _is_key_async(key):
+            raise AssertionError(
+                "cannot use synchronous get on async object (object marked with @async_context)"
+            )
+
         if key == object:
             return None  # NEVER auto-init plain object
 
@@ -245,21 +321,90 @@ class Registry(Resolver):
             return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))))
 
         meta = _get_meta_from_key(key)
-
-        if isinstance(key, type):
-            # if a type has metadata attached to it as an attribute,
-            # the registry must use that metadata to construct the object
-            # or query for a constructed object. This is because the user
-            # has intentionally added metadata to the class, and thus
-            # we should not use metadata inherited from interfaces.
-            if _get_meta(key, include_bases=False) is not None:
-                return _unwrap(self._get_by_metadata(meta, default))
-
-            obj_list = self._by_iface.get(key)
-            if obj_list:
-                return _unwrap(obj_list[0])
+        maybe_class = self._get_if_already_in_registry(key, meta)
+        if maybe_class is not None:
+            return maybe_class
 
         return _unwrap(self._get_by_metadata(meta, default))
+
+    async def aget(self, key: "RegistryKey[T]") -> Optional[T]:
+        """
+        Resolve objects marked with the @async_context decorator.
+        """
+        if not _is_key_async(key):
+            raise AssertionError("key must be async to use aget")
+
+        if not self._async_entered:
+            raise AssertionError("cannot use aget outside of async context")
+
+        meta = _get_meta_from_key(key)
+        maybe_initialized_obj = self._get_if_already_in_registry(key, meta)
+        if maybe_initialized_obj is not None:
+            return maybe_initialized_obj
+
+        initialized_obj = await self._aget_by_metadata(meta)
+        return _unwrap(initialized_obj)
+
+    def _get_if_already_in_registry(
+        self, key: "RegistryKey[T]", meta: "RegistryMetadata[T]"
+    ) -> Optional[T]:
+        # retrieve the class metdata, and the metadata of class
+        # without inherited metadata
+        meta = _get_meta_from_key(key)
+
+        # if the class has already been registered, return it
+        if meta in self._by_meta:
+            return _unwrap(self._by_meta[meta])
+
+        # following checks only apply if key is a class
+        if not isinstance(key, type):
+            return None
+
+        # If the class (key) has no metadata, but an object exists in the
+        # registry that is a concrete subtype of the class, return that
+        # object. If the class has metadata, we must use the metadata to
+        # construct the class, and we should not check the registry for
+        # concrete subtypes. A user must specify metadata for a class itself
+        # in order to force the registry to use that metadata to construct the
+        # class, inherited metadata alone does not prevent the registry
+        # from returning a concrete subtype of the class.
+        meta_no_bases = _get_meta(key, include_bases=False)
+        obj_list = self._by_iface.get(key)
+        if meta_no_bases is None and obj_list:
+            return _unwrap(obj_list[0])
+
+        # nothing has been registered for this metadata yet
+        return None
+
+    async def __aenter__(self) -> "Registry":
+        """
+        Mark a registry instance as ready for resolving async objects.
+        """
+        if self._async_entered:
+            raise AssertionError(
+                "Attempting to enter registry context while already in context. This should not happen."
+            )
+        self._async_entered = True
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Closes the registry. Closes all contexts on the registry's context stack
+        and then closes the registry itself with regisry.close().
+        """
+        if not self._async_entered:
+            raise AssertionError(
+                "Attempting to exit registry context while not in context. This should not happen."
+            )
+        self._async_entered = False
+        # close all objects in the registry
+        try:
+            await self._async_context_stack.aclose()
+        finally:
+            # as we currently only support async -> sync transitions,
+            # a sync class cannot depend on an async class, and thus we may
+            # safely close all sync classes after closing all async classes.
+            await to_thread(self.close)
 
     def __getitem__(self, key: "RegistryKey[T]") -> T:
         """Get an object from the registry by a key.
