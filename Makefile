@@ -35,10 +35,10 @@ test-examples: $(ALL_EXAMPLES) ## run example code test suite
 .PHONY: $(ALL_EXAMPLES)
 $(ALL_EXAMPLES): $(HATCH_BIN)
 	$(HATCH_CMD) run python $@
-test-unit: $(VENV_TARGET) ## run unit test suite
+test-unit: ${HATCH_BIN} $(VENV_TARGET) ## run unit test suite
 	$(HATCH_CMD) test --all --parallel --randomize
-test-types:
+test-types: ${HATCH_BIN} $(VENV_TARGET)
 	$(HATCH_CMD) run types:check
 
 clean:
-	rm -rf ${VENV_DIR}
+	rm -rf ${VENV_DIR} .mypy_cache .pytest_cache
