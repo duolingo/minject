@@ -22,18 +22,23 @@ PYTHON_CMD := $(VENV_BIN)/python3
 
 # hatch environment for development
 HATCH_BIN := $(VENV_BIN)/hatch
-HATCH_CMD := $(PYTHON_CMD) -m hatch run python
+HATCH_CMD := $(PYTHON_CMD) -m hatch
 $(HATCH_BIN): $(VENV_TARGET)
 	$(PYTHON_CMD) -m pip install hatch
 
 
 # test suites
-.PHONY: test test-examples test-unit
-test: test-examples test-unit ## run all test suites
+.PHONY: test test-examples test-unit test-types
+test: test-examples test-unit test-types ## run all test suites
 ALL_EXAMPLES := $(wildcard docs/examples/*.py)
 test-examples: $(ALL_EXAMPLES) ## run example code test suite
 .PHONY: $(ALL_EXAMPLES)
 $(ALL_EXAMPLES): $(HATCH_BIN)
-	$(HATCH_CMD) $@
-test-unit: $(VENV_TARGET) ## run unit test suite
-	$(HATCH_CMD) -m unittest discover -s tests
+	$(HATCH_CMD) run python $@
+test-unit: ${HATCH_BIN} $(VENV_TARGET) ## run unit test suite
+	$(HATCH_CMD) test --all --parallel --randomize
+test-types: ${HATCH_BIN} $(VENV_TARGET)
+	$(HATCH_CMD) run types:check
+
+clean:
+	rm -rf ${VENV_DIR} .mypy_cache .pytest_cache
