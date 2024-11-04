@@ -39,3 +39,6 @@ test-unit: $(VENV_TARGET) ## run unit test suite
 	$(HATCH_CMD) test --all --parallel --randomize
 test-types:
 	$(HATCH_CMD) run types:check
+
+clean:
+	rm -rf ${VENV_DIR}
