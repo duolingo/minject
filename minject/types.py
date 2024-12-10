@@ -18,11 +18,9 @@ class _MinimalMappingProtocol(Protocol[K_contra, V_co]):
     Defines the minimum methods needed for the dict-like objects acceptable to RegistryNestedConfig.
     """
 
-    def __getitem__(self, key: K_contra) -> V_co:
-        ...
+    def __getitem__(self, key: K_contra) -> V_co: ...
 
-    def __contains__(self, key: K_contra) -> bool:
-        ...
+    def __contains__(self, key: K_contra) -> bool: ...
 
 
 class _AsyncContext(Protocol):
@@ -32,10 +30,8 @@ class _AsyncContext(Protocol):
     it's __aenter__ method.
     """
 
-    async def __aenter__(self: Self) -> Self:
-        ...
+    async def __aenter__(self: Self) -> Self: ...
 
     async def __aexit__(
         self, exc_type: Type[BaseException], exc_value: BaseException, traceback: TracebackType
-    ) -> None:
-        ...
+    ) -> None: ...

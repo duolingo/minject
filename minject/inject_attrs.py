@@ -92,7 +92,7 @@ class _BindingKey:
     class_lineno: int  # The line containing the "class" keyword.
 
 
-_key_binding_mapping: DefaultDict[_BindingKey, dict] = defaultdict(lambda: {})
+_key_binding_mapping: DefaultDict[_BindingKey, dict] = defaultdict(dict)
 
 
 def inject_field(binding=_T, **attr_field_kwargs) -> Any:

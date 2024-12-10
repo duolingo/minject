@@ -129,12 +129,10 @@ def test_attr_defaults() -> None:
     """
 
     @inject_define
-    class TestClassOne:
-        ...
+    class TestClassOne: ...
 
     @inject_define(define_kwargs={})
-    class TestClassTwo:
-        ...
+    class TestClassTwo: ...
 
     assert TestClassOne() != TestClassOne()
     assert TestClassTwo() == TestClassTwo()
