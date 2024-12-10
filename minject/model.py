@@ -31,8 +31,7 @@ class Resolver(abc.ABC):
     """
 
     @abc.abstractmethod
-    def resolve(self, key: "RegistryKey[T]") -> T:
-        ...
+    def resolve(self, key: "RegistryKey[T]") -> T: ...
 
     async def _aresolve(self, key: "RegistryKey[T]") -> T:
         """
@@ -51,8 +50,7 @@ class Resolver(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def config(self) -> RegistryConfigWrapper:
-        ...
+    def config(self) -> RegistryConfigWrapper: ...
 
 
 MockingFunction: TypeAlias = Callable[[Arg], Any]
@@ -64,8 +62,7 @@ class Deferred(abc.ABC, Generic[T_co]):
     """
 
     @abc.abstractmethod
-    def resolve(self, registry_impl: Resolver) -> T_co:
-        ...
+    def resolve(self, registry_impl: Resolver) -> T_co: ...
 
     @abc.abstractmethod
     async def aresolve(self, registry_impl: Resolver) -> T_co:

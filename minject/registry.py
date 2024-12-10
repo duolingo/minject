@@ -1,4 +1,5 @@
 """The Registry itself is a runtime collection of initialized classes."""
+
 import functools
 import logging
 from contextlib import AsyncExitStack
@@ -57,7 +58,7 @@ class RegistryWrapper(Generic[T]):
 
 
 def _synchronized(
-    func: Callable[Concatenate["Registry", P], R]
+    func: Callable[Concatenate["Registry", P], R],
 ) -> Callable[Concatenate["Registry", P], R]:
     """Decorator to synchronize method access with a reentrant lock."""
 

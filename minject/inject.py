@@ -55,8 +55,7 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
-def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Type[T]]:
-    ...
+def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Type[T]]: ...
 
 
 # Overload for when we _can_ infer what `T` will be from a call to bind.
@@ -64,8 +63,7 @@ def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Ty
 def bind(
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
-) -> Callable[[Type[T]], Type[T]]:
-    ...
+) -> Callable[[Type[T]], Type[T]]: ...
 
 
 def bind(
@@ -198,18 +196,15 @@ class _RegistryReference(Deferred[T_co]):
 
 
 @overload
-def reference(key: RegistryMetadata[T]) -> _RegistryReference[T]:
-    ...
+def reference(key: RegistryMetadata[T]) -> _RegistryReference[T]: ...
 
 
 @overload
-def reference(key: str) -> _RegistryReference:
-    ...
+def reference(key: str) -> _RegistryReference: ...
 
 
 @overload
-def reference(key: Type[T], **bindings: DeferredAny) -> _RegistryReference[T]:
-    ...
+def reference(key: Type[T], **bindings: DeferredAny) -> _RegistryReference[T]: ...
 
 
 def reference(key, **bindings):
