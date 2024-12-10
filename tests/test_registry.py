@@ -376,8 +376,7 @@ class RegistryTestCase(unittest.TestCase):
             base.closed = True
 
         @bind(_close=close)
-        class Sub(Base):
-            ...
+        class Sub(Base): ...
 
         # Registry starts on initial lookup as part of the initiation process
         instance = self.registry[Sub]
@@ -492,8 +491,7 @@ def check_registry_interface_variance_convenience_methods() -> None:
     # Test that variance is bound to the type (RegistryMetadata) and not the method.
     DefinedSub = define(_Sub)
 
-    def check_covariance(_: RegistryMetadata[_Super]) -> None:
-        ...
+    def check_covariance(_: RegistryMetadata[_Super]) -> None: ...
 
     check_covariance(DefinedSub)
 
