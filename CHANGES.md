@@ -4,6 +4,10 @@
 
 # Changelog
 
+## v1.1.2
+
+Add missing transitive dependency `packaging`.
+
 ## v1.1.1
 
 Fix inject_define bindings for multiple class declarations with the same class

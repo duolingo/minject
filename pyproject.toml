@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 name = "minject"
 requires-python = ">=3.7"
 
-dependencies = ["attrs>=17.4", "typing_extensions>=4.1"]
+dependencies = ["attrs>=17.4", "packaging", "typing_extensions>=4.1"]
 
 [build-system]
 build-backend = "hatchling.build"
