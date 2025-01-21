@@ -6,7 +6,7 @@
 
 ## v1.1.2
 
-Add missing transitive dependency `packaging`.
+Add missing dependency `packaging`.
 
 ## v1.1.1
 
