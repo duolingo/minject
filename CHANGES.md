@@ -4,6 +4,12 @@
 
 # Changelog
 
+## v1.3.0
+
+Relax `RegistryInitConfig` from `Dict` to `Mapping`. (We do not actually require
+the config to be a dict, and in other existing repos we already use other
+Mapping implementations with the `Registry`.)
+
 ## v1.2.0
 
 Remove workarounds for bugs and incompatibilities in Python 3.7 and 3.8.

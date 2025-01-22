@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar
 
 from typing_extensions import TypedDict
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-RegistryInitConfig = Dict[str, Any]
+RegistryInitConfig = Mapping[str, Any]
 
 
 class RegistryConfigWrapper:
