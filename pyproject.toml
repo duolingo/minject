@@ -37,22 +37,6 @@ dependencies = [
   "typing",
 ]
 
-[tool.hatch.envs.hatch-test]
-dependencies = [
-  # The default hatch-test dependencies are not compatible with Python 3.7, a version we want to test against. Hence
-  # we need to specify our own dependencies here.
-  # https://github.com/pypa/hatch/blob/3adae6c0dfd5c20dfe9bf6bae19b44a696c22a43/src/hatch/env/internal/test.py
-  "coverage[toml]",
-  'coverage-enable-subprocess',
-  'pytest',
-  'pytest-asyncio',
-  'pytest-mock',
-  'pytest-randomly',
-  'pytest-asyncio',
-  'pytest-rerunfailures',
-  'pytest-xdist[psutil]',
-]
-
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
