@@ -10,9 +10,9 @@ description = "A small dependency injection library for Python."
 dynamic = ["version"]
 license = { file = "LICENSE" }
 name = "minject"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 
-dependencies = ["attrs>=17.4", "typing_extensions>=4.1"]
+dependencies = ["attrs>=17.4", "packaging", "typing_extensions>=4.1"]
 
 [build-system]
 build-backend = "hatchling.build"
@@ -54,10 +54,10 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive minject"
 
 [[tool.hatch.envs.types.matrix]]
-python = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
