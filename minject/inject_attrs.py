@@ -1,7 +1,6 @@
 import inspect
 from collections import defaultdict
 from dataclasses import dataclass
-from sys import version_info
 from typing import Any, DefaultDict, Dict, List, Optional, Type, TypeVar
 
 from attr import define, field
@@ -59,17 +58,9 @@ def _get_compatible_attrs_define_kwargs() -> Dict[str, bool]:
     """
     get kwargs compatible with current running version of attrs
     """
-    # if you are running python 3.8 or greater, use importlib.metadata
-    # to get the version of attrs. Otherwise, use the __version__ attribute
-    if version_info >= (3, 8):
-        from importlib.metadata import version as importlib_version  # type: ignore
+    from importlib.metadata import version as importlib_version
 
-        attr_version = importlib_version("attrs")
-    else:
-        # this is deprecated, but we still support python 3.7
-        from attr import __version__ as _attr_version
-
-        attr_version = _attr_version
+    attr_version = importlib_version("attrs")
 
     parsed_attr_version = version.parse(attr_version)
     attrs_define_kwargs: Dict[str, bool] = {}
@@ -123,13 +114,6 @@ def inject_field(binding=_T, **attr_field_kwargs) -> Any:
     # (If not, our inferred field name is probably wrong too!)
     class_frame = stack[2]
     class_lineno = _class_lineno_from_context(class_frame.code_context, class_frame.lineno)
-    if class_lineno is None and version_info < (3, 8):
-        # Python 3.7's inspect.stack is missing the stack frame for a class
-        # declaration with a decorator: it gives the line for the decorator
-        # invocation, but no line for the class declaration proper.
-        # As a workaround, we can scan the source file starting from the
-        # decorator line to find the actual class keyword.
-        class_lineno = _class_lineno_from_file(class_frame.filename, class_frame.lineno)
     if class_lineno is None:
         raise ValueError(
             "Could not find the line containing the class declaration. Are you calling inject_field properly?"
@@ -157,36 +141,8 @@ def inject_define(
     def inject_define_inner(cls: Type[_P]) -> Type[_P]:
         # Identify the line containing the "class" keyword for cls: that is
         # the line number that we used in the binding key for its fields.
-        #
-        # Ideally we would only use inspect.getsourcelines for this.
-        # Unfortunately, getsourcelines before Python 3.9 is broken for nested
-        # class definitions and/or class definitions with multiline strings (see
-        # https://github.com/python/cpython/issues/68266,
-        # https://github.com/python/cpython/issues/79294), so on those versions
-        # we fall back to reading from the source file at the line indicated by
-        # the stack traceback.
-        filename = None
-        class_lineno = None
-        if version_info < (3, 9):
-            stack = inspect.stack()
-            # The first frame is the call to inject_define_inner.
-            # The second frame is either inject_define itself or the
-            # invocation of the decorator in the user's source file.
-            if stack[1].function == "inject_define":
-                frame = stack[2]
-            else:
-                frame = stack[1]
-            filename = frame.filename
-            # In Python 3.7, the stack frame reports the line for the decorator.
-            # In 3.8 it reports the line for the class declaration, so we may be
-            # able to get it from the stack context without needing to open the
-            # file.
-            class_lineno = _class_lineno_from_context(frame.code_context, frame.lineno)
-            if class_lineno is None:
-                class_lineno = _class_lineno_from_file(frame.filename, frame.lineno)
-        else:
-            filename = inspect.getsourcefile(cls)
-            class_lineno = _class_lineno_from_context(*inspect.getsourcelines(cls))
+        filename = inspect.getsourcefile(cls)
+        class_lineno = _class_lineno_from_context(*inspect.getsourcelines(cls))
         if filename is None or class_lineno is None:
             raise ValueError(
                 "Could not find line containing class declaration. Are you calling inject_define properly?"

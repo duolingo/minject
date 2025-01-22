@@ -4,9 +4,15 @@
 
 # Changelog
 
+## v1.2.0
+
+Remove workarounds for bugs and incompatibilities in Python 3.7 and 3.8.
+
 ## v1.1.2
 
 Add missing dependency `packaging`.
+
+Drop support for Python 3.7 and 3.8, which are at end-of-life.
 
 ## v1.1.1
 

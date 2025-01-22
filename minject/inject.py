@@ -2,6 +2,7 @@
 
 import itertools
 import os
+from asyncio import to_thread
 from typing import (
     Any,
     Callable,
@@ -17,7 +18,6 @@ from typing import (
 
 from typing_extensions import TypeGuard, assert_type
 
-from minject.asyncio_extensions import to_thread
 from minject.types import _AsyncContext
 
 from .metadata import _INJECT_METADATA_ATTR, RegistryMetadata, _gen_meta, _get_meta

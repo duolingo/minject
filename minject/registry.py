@@ -2,6 +2,7 @@
 
 import functools
 import logging
+from asyncio import to_thread
 from contextlib import AsyncExitStack
 from textwrap import dedent
 from threading import RLock
@@ -9,7 +10,6 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeV
 
 from typing_extensions import Concatenate, ParamSpec
 
-from minject.asyncio_extensions import to_thread
 from minject.inject import _is_key_async, _RegistryReference, reference
 
 from .config import RegistryConfigWrapper, RegistryInitConfig
