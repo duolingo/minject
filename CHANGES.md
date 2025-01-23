@@ -4,6 +4,10 @@
 
 # Changelog
 
+## v1.3.0
+
+Relax `RegistryInitConfig` from `Dict` to `Mapping`.
+
 ## v1.2.0
 
 Remove workarounds for bugs and incompatibilities in Python 3.7 and 3.8.

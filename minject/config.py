@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar
 
 from typing_extensions import TypedDict
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-RegistryInitConfig = Dict[str, Any]
+RegistryInitConfig = Mapping[str, Any]
 
 
 class RegistryConfigWrapper:
@@ -21,8 +21,8 @@ class RegistryConfigWrapper:
         self._impl = {}
 
     def _from_dict(self, config_dict: RegistryInitConfig):
-        """Configure the registry from a dictionary.
-        The provided dictionary should contain general configuration that can
+        """Configure the registry from a dictionary-like mapping.
+        The provided mapping should contain general configuration that can
         be accessed using the inject.config decorator.
 
         Parameters:
