@@ -4,6 +4,11 @@
 
 # Changelog
 
+## v1.4.0
+
+Allow `RegistryMetadata` to process bindings for unhashable objects. If a bound
+object is unhashable, the binding key uses the object's ID instead.
+
 ## v1.3.0
 
 Relax `RegistryInitConfig` from `Dict` to `Mapping`.
