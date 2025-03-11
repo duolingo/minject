@@ -127,8 +127,27 @@ class RegistryMetadata(Generic[T_co]):
         """
         return self._gen_key()
 
-    def _gen_key(self):
-        cls_and_bindings = (self._cls,) + tuple(self._bindings.items())
+    def _gen_key(self) -> Hashable:
+        def _hashable(item: object) -> Hashable:
+            # In theory this ought to be:
+            #
+            #    if not isinstance(item, Hashable):
+            #        return id(item)
+            #    return item
+            #
+            # Unfortunately, some items that are not hashable (such as tuples
+            # with unhashable elements) are still reported as instances of
+            # Hashable, even though actually hashing them fails at run-time.
+            # Instead, we probe to see whether hashing actually succeeds.
+            try:
+                hash(item)
+                return item
+            except:
+                return id(item)
+
+        cls_and_bindings = (self._cls,) + tuple(
+            (k, _hashable(v)) for k, v in self._bindings.items()
+        )
         return cls_and_bindings
 
     @property
