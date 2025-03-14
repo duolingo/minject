@@ -15,8 +15,8 @@ requires-python = ">=3.9"
 dependencies = ["attrs>=17.4", "packaging", "typing_extensions>=4.1"]
 
 [build-system]
+requires = ["hatchling>=1.26.1"]
 build-backend = "hatchling.build"
-requires = ["hatchling >= 1.10.0"]
 
 [tool.hatch.version]
 path = "minject/__init__.py"
