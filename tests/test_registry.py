@@ -20,7 +20,7 @@ from minject.inject import (
 from minject.metadata import RegistryMetadata
 from minject.mock import mock
 from minject.model import Resolvable
-from minject.registry import initialize
+from minject.registry import Registry, initialize
 
 
 class _Super:
@@ -30,6 +30,10 @@ class _Super:
 class _Sub(_Super):
     """An empty sub-class type."""
 
+class _AutostartCandidate:
+    started: bool = False
+    def __init__(self):
+        _AutostartCandidate.started = True
 
 class RegistryTestCase(unittest.TestCase):
     def setUp(self):
@@ -475,6 +479,18 @@ class RegistryTestCase(unittest.TestCase):
         # instantiated only once but accessed N times, we would see N objects for each type in the counter.
         for count in Counter(map(id, results)).values():
             self.assertEqual(count, query_per_class)
+
+
+    def test_legacy_autostart(self) -> None:
+        assert _AutostartCandidate.started == False
+        autostart_config = {
+            "registry" : {
+                "autostart" : ["tests.test_registry._AutostartCandidate"]
+            }    
+        }
+        r = Registry()
+        r.config.from_dict(autostart_config)
+        assert _AutostartCandidate.started == True
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
