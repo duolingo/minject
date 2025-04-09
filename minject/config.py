@@ -18,9 +18,8 @@ RegistryInitConfig = Mapping[str, Any]
 class RegistryConfigWrapper:
     """Manages the configuration of the registry."""
 
-    def __init__(self, autostart: Callable[[], None] = lambda : None):
+    def __init__(self):
         self._impl = {}
-        self._autostart = autostart
 
     def from_dict(self, config_dict: RegistryInitConfig) -> "RegistryConfigWrapper":
         """
@@ -37,9 +36,6 @@ class RegistryConfigWrapper:
             config_dict: the configuration data to apply.
         """
         self._impl = config_dict
-
-        # to support legacy behavior of auto starting registry instances
-        self._autostart()
 
     def __contains__(self, key: str):
         return key in self._impl

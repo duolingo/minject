@@ -490,6 +490,8 @@ class RegistryTestCase(unittest.TestCase):
         }
         r = Registry()
         r.config.from_dict(autostart_config)
+        assert _AutostartCandidate.started == False
+        r.start()
         assert _AutostartCandidate.started == True
 
 

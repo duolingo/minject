@@ -79,7 +79,7 @@ class Registry(Resolver):
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
-        self._config = RegistryConfigWrapper(autostart=self._autostart)
+        self._config = RegistryConfigWrapper()
         self._lock = RLock()
         self._async_context_stack: AsyncExitStack = AsyncExitStack()
         self._async_entered = False
@@ -87,7 +87,7 @@ class Registry(Resolver):
         if config is not None:
             self._config._from_dict(config)
 
-    def _autostart(self) -> None:
+    def start(self) -> None:
         """
         Deprecated feature:
 
