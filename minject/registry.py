@@ -7,7 +7,7 @@ from asyncio import to_thread
 from contextlib import AsyncExitStack
 from textwrap import dedent
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Concatenate, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
 from typing_extensions import ParamSpec
 
