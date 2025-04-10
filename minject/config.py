@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
 
 from typing_extensions import TypedDict
 
@@ -11,7 +11,24 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-RegistryInitConfig = Mapping[str, Any]
+class RegistrySubConfig(TypedDict, total=False):
+    """Configuration entries that apply to the registry itself."""
+
+    # A sequence of class names that should start at registry start time.
+    autostart: Sequence[str]
+    # Names of registry classes mapped to the kwarg dictionary that should be used to initialize
+    # the object of that type.
+    by_class: Mapping[str, Kwargs]
+    # Named registry entries that map to the kwarg dictionary that should be used to initialize
+    # the object for that name.
+    by_name: Mapping[str, Kwargs]
+
+
+class InternalRegistryConfig(TypedDict, total=False):
+    registry: RegistrySubConfig
+
+
+RegistryInitConfig = Union[Mapping[str, Any], InternalRegistryConfig]
 
 
 class RegistryConfigWrapper:
@@ -41,3 +58,30 @@ class RegistryConfigWrapper:
         if item is None:
             raise KeyError(key)
         return item
+
+    def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
+        """Get init kwargs configured for a given RegistryMetadata."""
+        result: Dict[str, Any] = {}
+
+        by_class = self._impl.get("by_class")
+        if by_class and meta._cls:
+            # first apply config for the class name
+            cls_name = meta._cls.__name__
+            kwargs = by_class.get(cls_name)
+            if kwargs:
+                result.update(kwargs)
+
+            # then apply config for the fully qualified class name
+            cls_module = f"{meta._cls.__module__}.{cls_name}"
+            kwargs = by_class.get(cls_module)
+            if kwargs:
+                result.update(kwargs)
+
+        # finally apply config for the object by name
+        by_name = self._impl.get("by_name")
+        if by_name and meta._name:
+            kwargs = by_name.get(meta._name)
+            if kwargs:
+                result.update(kwargs)
+
+        return result

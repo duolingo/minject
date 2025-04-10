@@ -174,6 +174,37 @@ class RegistryTestCase(unittest.TestCase):
 
         self.assertEqual("http://localhost/myapi", client.get())
 
+    def test_config(self) -> None:
+        RedBorder = define(helpers.Border, color="red")
+        RedBorder.name = "border_red"
+
+        DottedBorder = define(helpers.Border)
+        DottedBorder.name = "border_dotted"
+
+        registry = initialize(
+            {
+                "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
+                "by_name": {
+                    "border_red": {"width": "2px"},
+                    "border_dotted": {"style": "dotted"},
+                },
+            }
+        )
+
+        border = registry[helpers.Border]
+        border_red = registry[RedBorder]
+        border_dotted = registry[DottedBorder]
+
+        self.assertEqual("1px", border.width)
+        self.assertEqual("2px", border_red.width)
+        self.assertEqual("1px", border_dotted.width)
+        self.assertEqual("solid", border.style)
+        self.assertEqual("solid", border_red.style)
+        self.assertEqual("dotted", border_dotted.style)
+        self.assertEqual("black", border.color)
+        self.assertEqual("red", border_red.color)
+        self.assertEqual("black", border_dotted.color)
+
     def test_func(self) -> None:
         registry = initialize({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
@@ -366,26 +397,44 @@ class RegistryTestCase(unittest.TestCase):
         mocked.a.upper.assert_called_once()
         mocked.b.upper.assert_not_called()
 
+    def test_autostart(self) -> None:
+        registry = initialize({"autostart": ["tests.test_registry_helpers.FakeWorker"]})
+
+        registry.start()
+        self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
+        self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
+
+        registry.close()
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
+
     def test_self(self) -> None:
         func_logic = function(helpers.logic, self_tag)
         self.assertEqual(self.registry, func_logic.call(self.registry))
 
-    def test_inherited_stop(self) -> None:
+    def test_inherited_start_stop(self) -> None:
         class Base:
             def __init__(self):
+                self.started: bool = False
                 self.closed: bool = False
+
+        def start(base: Base):
+            base.started = True
 
         def close(base: Base):
             base.closed = True
 
-        @bind(_close=close)
-        class Sub(Base): ...
+        @bind(_start=start, _close=close)
+        class Sub(Base):
+            ...
 
         # Registry starts on initial lookup as part of the initiation process
         instance = self.registry[Sub]
+        assert instance.started == True
         assert instance.closed == False
         # Close the registry
         self.registry.close()
+        assert instance.started == True
         assert instance.closed == True
 
     def test_multiple_deferred_bindings(self) -> None:

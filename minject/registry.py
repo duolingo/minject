@@ -9,11 +9,11 @@ from textwrap import dedent
 from threading import RLock
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
 
 from minject.inject import _is_key_async, _RegistryReference, reference
 
-from .config import RegistryConfigWrapper, RegistryInitConfig
+from .config import RegistryConfigWrapper, RegistryInitConfig, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, aresolve_value, resolve_value
 
@@ -58,10 +58,16 @@ class RegistryWrapper(Generic[T]):
         self.obj = obj
         self._meta = _meta
 
+    def start(self) -> None:
+        if not getattr(self, "_started", False) and self._meta:
+            self._meta._start_object(self.obj)
+        self._started = True
+
     def close(self) -> None:
-        if not getattr(self, "_closed", False) and self._meta:
-            self._meta._close_object(self.obj)
-        self._closed = True
+        if getattr(self, "_started", False):
+            if not getattr(self, "_closed", False) and self._meta:
+                self._meta._close_object(self.obj)
+            self._closed = True
 
 
 def _synchronized(
@@ -70,7 +76,7 @@ def _synchronized(
     """Decorator to synchronize method access with a reentrant lock."""
 
     @functools.wraps(func)
-    def wrapper(self: "Registry", *args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
         with self._lock:
             return func(self, *args, **kwargs)
 
@@ -121,6 +127,30 @@ class Registry(Resolver):
                 """
                 ).strip()
             )
+
+    def _autostart_candidates(self) -> Iterable[RegistryKey]:
+        # the autostart_default variable exists so that the
+        # autostart variable can be type hinted
+        autostart_default: Optional[Iterable[str]] = None
+        autostart = self.config.get(key="autostart", default=autostart_default)
+        if autostart:
+            return (_resolve_import(value) for value in autostart)
+        return ()
+
+    @_synchronized
+    def start(self) -> None:
+        """
+        Call start if defined on all objects contained in the registry.
+        This includes any classes designated as autostart in config.
+        """
+        for key in self._autostart_candidates():
+            LOG.debug("autostarting %s", key)
+            self[key]  # pylint: disable=pointless-statement
+
+        for wrapper in list(self._objects):
+            if wrapper._meta is not None:
+                # call the object's start method, if defined
+                wrapper.start()
 
     @_synchronized
     def close(self) -> None:
@@ -210,6 +240,8 @@ class Registry(Resolver):
             # add to our list of all objects (this MUST happen after init so
             # any references come earlier in sequence and are destroyed first)
             self._objects.append(wrapper)
+            # call start method (if any)
+            wrapper.start()
             success = True
         finally:
             if not success:

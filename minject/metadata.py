@@ -105,6 +105,7 @@ class RegistryMetadata(Generic[T_co]):
         self,
         cls: Type[T_co],
         name: Optional[str] = None,  # pylint: disable=redefined-outer-name
+        start: Optional[Callable[[T_co], None]] = None,
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
         is_async_context: bool = False,
@@ -115,6 +116,7 @@ class RegistryMetadata(Generic[T_co]):
 
         # TODO(1.0): deprecated, not used
         self._name = name
+        self._start = start
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
         self.is_async_context = is_async_context
@@ -195,6 +197,11 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = resolve_value(registry_impl, value)
 
+        config_ = registry_impl.config.get_init_kwargs(self)
+        if config_:
+            for name_, value in config_.items():
+                init_kwargs[name_] = value
+
         self._cls.__init__(obj, **init_kwargs)
 
     async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
@@ -206,6 +213,10 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = await aresolve_value(registry_impl, value)
         self._cls.__init__(obj, **init_kwargs)
+
+    def _start_object(self, obj: T_co) -> None:  # type: ignore[misc]
+        if self._start:
+            self._start(obj)
 
     def _close_object(self, obj: T_co) -> None:  # type: ignore[misc]
         if self._close:
