@@ -125,26 +125,6 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     return cls
 
 
-# TODO(1.0): deprecated, not used
-def name(name_):
-    # type: (str) -> Callable[[Type[T]], Type[T]]
-    """Decorator to bind a registry name for a class.
-    
-    .. deprecated:: 1.0
-       This decorator is deprecated and should not be used in new code.
-       Do not assign a name to a binding.
-    """
-
-    def wrap(cls):
-        # type: (Type[T]) -> Type[T]
-        """Decorate a class with a registry name."""
-        meta = _gen_meta(cls)
-        meta._name = name_
-        return cls
-
-    return wrap
-
-
 def start_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
     """Function to bind a registry start function for a class.

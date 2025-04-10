@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class RegistrySubConfig(TypedDict, total=False):
+class _RegistrySubConfig(TypedDict, total=False):
     """Configuration entries that apply to the registry itself."""
 
     # A sequence of class names that should start at registry start time.
@@ -24,11 +24,11 @@ class RegistrySubConfig(TypedDict, total=False):
     by_name: Mapping[str, Kwargs]
 
 
-class InternalRegistryConfig(TypedDict, total=False):
-    registry: RegistrySubConfig
+class _InternalRegistryConfig(TypedDict, total=False):
+    registry: _RegistrySubConfig
 
 
-RegistryInitConfig = Union[Mapping[str, Any], InternalRegistryConfig]
+RegistryInitConfig = Union[Mapping[str, Any], _InternalRegistryConfig]
 
 
 class RegistryConfigWrapper:
@@ -37,7 +37,7 @@ class RegistryConfigWrapper:
     def __init__(self):
         self._impl = {}
 
-    def from_dict(self, config_dict: Union[Mapping[str, Any], InternalRegistryConfig]):
+    def from_dict(self, config_dict: Union[Mapping[str, Any], _InternalRegistryConfig]):
         """Configure the registry from a dictionary.
         
         .. deprecated:: 1.0
@@ -70,38 +70,3 @@ class RegistryConfigWrapper:
         if item is None:
             raise KeyError(key)
         return item
-
-    def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
-        """Get init kwargs configured for a given RegistryMetadata.
-        
-        .. deprecated:: 1.0
-           This method is deprecated and should not be used in new code.
-           Autostart from config is considered deprecated, however we
-           must support it temporarily for backwards compatability.
-        """
-        result: Dict[str, Any] = {}
-
-        reg_conf: Optional[RegistrySubConfig] = self._impl.get("registry")
-        if reg_conf:
-            by_class = reg_conf.get("by_class")
-            if by_class and meta._cls:
-                # first apply config for the class name
-                cls_name = meta._cls.__name__
-                kwargs = by_class.get(cls_name)
-                if kwargs:
-                    result.update(kwargs)
-
-                # then apply config for the fully qualified class name
-                cls_module = f"{meta._cls.__module__}.{cls_name}"
-                kwargs = by_class.get(cls_module)
-                if kwargs:
-                    result.update(kwargs)
-
-            # finally apply config for the object by name
-            by_name = reg_conf.get("by_name")
-            if by_name and meta._name:
-                kwargs = by_name.get(meta._name)
-                if kwargs:
-                    result.update(kwargs)
-
-        return result

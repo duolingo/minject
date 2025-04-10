@@ -196,11 +196,6 @@ class RegistryMetadata(Generic[T_co]):
         for name_, value in self._bindings.items():
             init_kwargs[name_] = resolve_value(registry_impl, value)
 
-        config_ = registry_impl.config.get_init_kwargs(self)
-        if config_:
-            for name_, value in config_.items():
-                init_kwargs[name_] = value
-
         self._cls.__init__(obj, **init_kwargs)
 
     async def _ainit_object(self, obj: T_co, registry_impl: "Registry") -> None:  # type: ignore[misc]
