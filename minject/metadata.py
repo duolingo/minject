@@ -128,7 +128,11 @@ class RegistryMetadata(Generic[T_co]):
 
     @property
     def name(self) -> Optional[str]:
-        """Get the name this object is stored as in the registry."""
+        """
+        .. deprecated:: 1.0
+            This property is deprecated and should not be used in new code.
+            Do not assign a name to a binding.
+        """
         return self._name
 
     @name.setter
@@ -143,7 +147,7 @@ class RegistryMetadata(Generic[T_co]):
     @property
     def key(self) -> Hashable:
         """The unique identifier used by this registry object.
-        By default this is a combination of class and bindings.
+        This is a combination of class and bindings.
         """
         if self._key is None:
             self._key = self._gen_key()
