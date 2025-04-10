@@ -4,6 +4,10 @@
 
 # Changelog
 
+## v1.5.0
+
+Adds deprecated APIs depended on by legacy tools.
+
 ## v1.4.0
 
 Allow `RegistryMetadata` to process bindings for unhashable objects. If a bound
