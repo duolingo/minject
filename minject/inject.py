@@ -55,18 +55,23 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
-def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Type[T]]: ...
+def bind(
+    _name: Optional[str] = None, _close: None = None, **bindings: DeferredAny
+) -> Callable[[Type[T]], Type[T]]:
+    ...
 
 
 # Overload for when we _can_ infer what `T` will be from a call to bind.
 @overload
 def bind(
+    _name: Optional[str] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> Callable[[Type[T]], Type[T]]: ...
 
 
 def bind(
+    _name=None,
     _close=None,
     **bindings,
 ):
@@ -75,6 +80,8 @@ def bind(
     def wrap(cls: Type[T]) -> Type[T]:
         """Decorate a class with registry bindings."""
         meta = _gen_meta(cls)
+        if _name:
+            meta._name = _name
         if _close:
             meta._close = _close
         meta.update_bindings(**bindings)
@@ -95,9 +102,35 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     meta.is_async_context = True
     return cls
 
+# TODO(1.0): deprecated, not used
+def name(name_):
+    # type: (str) -> Callable[[Type[T]], Type[T]]
+    """Decorator to bind a registry name for a class."""
+
+    def wrap(cls):
+        # type: (Type[T]) -> Type[T]
+        """Decorate a class with a registry name."""
+        meta = _gen_meta(cls)
+        meta._name = name_
+        return cls
+
+    return wrap
+
+
+# TODO(1.0): deprecated, not used
+def close_method(cls, method):
+    # type: (Type[T], Callable[[T], None]) -> None
+    """Function to bind a registry close function for a class."""
+    if isinstance(cls, RegistryMetadata):
+        meta = cls
+    else:
+        meta = _gen_meta(cls)
+    meta._close = method
+
 
 def define(
     base_class: Type[T],
+    _name: Optional[str] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> RegistryMetadata[T]:
@@ -110,6 +143,7 @@ def define(
         meta.update_bindings(**bindings)
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
+    meta._name = _name
     meta._close = _close
     return meta
 
@@ -212,7 +246,7 @@ def reference(key, **bindings):
     if not bindings:
         return _RegistryReference(key)
     elif isinstance(key, type):
-        return _RegistryReference(define(key, None, **bindings))
+        return _RegistryReference(define(key, None, None, **bindings))
     else:
         raise TypeError("inject.reference can only include bindings on classes")
 
@@ -222,7 +256,7 @@ class _RegistryFunction(Deferred[T_co]):
 
     def __init__(
         self,
-        func: Callable[..., T_co],
+        func: Union[str, Callable[..., T_co]],
         # TODO: Type with ParamSpec and Concatenate after those are supported by mypy.
         #    https://github.com/python/mypy/issues/10201
         *args: DeferredAny,
@@ -239,17 +273,30 @@ class _RegistryFunction(Deferred[T_co]):
         kwargs = {}
         for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
-        return self.func()(*args, **kwargs)
+        return self.func(registry_impl)(*args, **kwargs)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         raise NotImplementedError("Have not implemented async registry function")
 
-    def func(self) -> Callable[..., T_co]:
-        return self._func
+    def func(self, registry_impl: Resolver) -> Callable[..., T_co]:
+        if isinstance(self._func, str):
+            # TODO(1.0): deprecated, unnecessary
+            # if 'func' is a string use the method with that name
+            # on the registry object referenced by arg0
+            arg0 = resolve_value(registry_impl, next(iter(self._args)))
+            return getattr(arg0, self._func)
+        else:
+            return self._func
 
     @property
     def args(self) -> Sequence[DeferredAny]:
-        return self._args
+        if isinstance(self._func, str):
+            # TODO(1.0): deprecated, unnecessary
+            # if 'func' is a string the first argument is used to resolve the method
+            # instead of being passed as an argument
+            return self._args[1:]
+        else:
+            return self._args
 
     @property
     def kwargs(self) -> Dict[str, DeferredAny]:
@@ -274,7 +321,7 @@ class _RegistryFunction(Deferred[T_co]):
 
 
 def function(
-    func: Callable[..., T], *args: DeferredAny, **kwargs: DeferredAny
+    func: Union[str, Callable[..., T]], *args: DeferredAny, **kwargs: DeferredAny
 ) -> _RegistryFunction[T]:
     """Bind a function to be run at init time.
     Parameters:

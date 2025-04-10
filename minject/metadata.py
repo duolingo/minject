@@ -104,16 +104,31 @@ class RegistryMetadata(Generic[T_co]):
     def __init__(
         self,
         cls: Type[T_co],
+        name: Optional[str] = None,  # pylint: disable=redefined-outer-name
         close: Optional[Callable[[T_co], None]] = None,
         bindings: Optional[Kwargs] = None,
         is_async_context: bool = False,
+        key: Optional[Hashable] = None,
     ):
         self._cls = cls
         self._bindings = bindings or {}
 
+        # TODO(1.0): deprecated, not used
+        self._name = name
         self._close = close
         self._interfaces = [cls for cls in inspect.getmro(cls) if cls is not object]
         self.is_async_context = is_async_context
+
+        self._key = key
+
+    @property
+    def name(self) -> Optional[str]:
+        """Get the name this object is stored as in the registry."""
+        return self._name
+
+    @name.setter
+    def name(self, name_: str) -> None:
+        self._name = name_
 
     @property
     def interfaces(self) -> Sequence[Type]:
@@ -123,9 +138,11 @@ class RegistryMetadata(Generic[T_co]):
     @property
     def key(self) -> Hashable:
         """The unique identifier used by this registry object.
-        This is a combination of class and bindings.
+        By default this is a combination of class and bindings.
         """
-        return self._gen_key()
+        if self._key is None:
+            self._key = self._gen_key()
+        return self._key
 
     def _gen_key(self) -> Hashable:
         def _hashable(item: object) -> Hashable:
@@ -145,7 +162,7 @@ class RegistryMetadata(Generic[T_co]):
             except:
                 return id(item)
 
-        cls_and_bindings = (self._cls,) + tuple(
+        cls_and_bindings = (self._cls, self._name) + tuple(
             (k, _hashable(v)) for k, v in self._bindings.items()
         )
         return cls_and_bindings
@@ -204,7 +221,13 @@ class RegistryMetadata(Generic[T_co]):
         return hash(self.key)
 
     def __str__(self) -> str:
-        return f"{self.key}"
+        return "{} {}({})".format(
+            repr(self._name) if self._name else "(unnamed)",
+            self._cls.__name__,
+            ", ".join(["{}={}".format(*item) for item in self._bindings.items()]),
+        )
 
     def __repr__(self) -> str:
-        return f"<RegistryMetadata {self.key}>"
+        return "<RegistryMetadata {} {}({})>".format(
+            repr(self._name) if self._name else "(unnamed)", self._cls.__name__, self._bindings
+        )

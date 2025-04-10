@@ -40,7 +40,7 @@ def mock(key: "RegistryKey[T]", mocking_function: Optional[MockingFunction] = No
         class_instantiated_with_mocks = iface(**kwargs_to_mocks)
     except TypeError:
         raise TypeError(
-            f"Unable to instantiate class {meta_to_mock.key}"
+            f"Unable to instantiate class {meta_to_mock.name}"
             "with mocks. Provided arguments do not match class"
             "signature.\n"
             f"arguments: {kwargs_to_mocks}\n"
