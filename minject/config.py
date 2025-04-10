@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, TypeVar, Union
 
 from typing_extensions import TypedDict
 
@@ -39,10 +39,10 @@ class RegistryConfigWrapper:
 
     def from_dict(self, config_dict: Union[Mapping[str, Any], _InternalRegistryConfig]):
         """Configure the registry from a dictionary.
-        
+
         .. deprecated:: 1.0
            This method is deprecated and should not be used in new code.
-           Use the config parameter to Registry instead to specify config dictionaries. 
+           Use the config parameter to Registry instead to specify config dictionaries.
 
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator. If the key 'registry'

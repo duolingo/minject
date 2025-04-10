@@ -141,7 +141,7 @@ class Registry(Resolver):
         """
         Call start if defined on all objects contained in the registry.
         This includes any classes designated as autostart in config.
-        
+
         .. deprecated:: 1.0
            This method is deprecated and should not be used in new code.
            Use the context manager API instead.
@@ -158,7 +158,7 @@ class Registry(Resolver):
     @_synchronized
     def close(self) -> None:
         """Close all objects contained in the registry.
-        
+
         .. deprecated:: 1.0
            This method is deprecated and should not be used in new code.
            Use the context manager API instead.
@@ -304,9 +304,8 @@ class Registry(Resolver):
         if meta.name:
             if meta.name in self._by_name:
                 return self._by_name[meta.name]
-        else:
-            if meta in self._by_meta:
-                return self._by_meta[meta]
+        elif meta in self._by_meta:
+            return self._by_meta[meta]
 
         if default is AUTO_OR_NONE:
             return self._register_by_metadata(meta)

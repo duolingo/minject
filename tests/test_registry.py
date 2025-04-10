@@ -538,7 +538,7 @@ class RegistryTestCase(unittest.TestCase):
         class NamedClass:
             def __init__(self):
                 pass
-        
+
         # Verify functionality still works
         registry = initialize()
         instance = registry[NamedClass]
