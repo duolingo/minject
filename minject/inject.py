@@ -288,7 +288,7 @@ class _RegistryFunction(Deferred[T_co]):
 
     def __init__(
         self,
-        func: Union[str, Callable[..., T_co]],
+        func: Callable[..., T_co],
         # TODO: Type with ParamSpec and Concatenate after those are supported by mypy.
         #    https://github.com/python/mypy/issues/10201
         *args: DeferredAny,
@@ -305,30 +305,17 @@ class _RegistryFunction(Deferred[T_co]):
         kwargs = {}
         for key, arg in self.kwargs.items():
             kwargs[key] = resolve_value(registry_impl, arg)
-        return self.func(registry_impl)(*args, **kwargs)
+        return self.func()(*args, **kwargs)
 
     async def aresolve(self, registry_impl: Resolver) -> T_co:
         raise NotImplementedError("Have not implemented async registry function")
 
-    def func(self, registry_impl: Resolver) -> Callable[..., T_co]:
-        if isinstance(self._func, str):
-            # TODO(1.0): deprecated, unnecessary
-            # if 'func' is a string use the method with that name
-            # on the registry object referenced by arg0
-            arg0 = resolve_value(registry_impl, next(iter(self._args)))
-            return getattr(arg0, self._func)
-        else:
-            return self._func
+    def func(self) -> Callable[..., T_co]:
+        return self._func
 
     @property
     def args(self) -> Sequence[DeferredAny]:
-        if isinstance(self._func, str):
-            # TODO(1.0): deprecated, unnecessary
-            # if 'func' is a string the first argument is used to resolve the method
-            # instead of being passed as an argument
-            return self._args[1:]
-        else:
-            return self._args
+        return self._args
 
     @property
     def kwargs(self) -> Dict[str, DeferredAny]:
