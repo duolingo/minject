@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 
 from minject.inject import _is_key_async, _RegistryReference, reference
 
-from .config import CONFIG_NAMESPACE, RegistryConfigWrapper, RegistryInitConfig, RegistrySubConfig
+from .config import RegistryConfigWrapper, RegistryInitConfig, RegistrySubConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, aresolve_value, resolve_value
 
@@ -127,7 +127,7 @@ class Registry(Resolver):
             )
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[RegistrySubConfig] = self.config.get(CONFIG_NAMESPACE)
+        registry_config: Optional[RegistrySubConfig] = self.config.get("registry")
         if registry_config:
             autostart = registry_config.get("autostart")
             if autostart:
