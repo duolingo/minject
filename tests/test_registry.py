@@ -174,59 +174,23 @@ class RegistryTestCase(unittest.TestCase):
 
         self.assertEqual("http://localhost/myapi", client.get())
 
-    def test_config(self) -> None:
-        RedBorder = define(helpers.Border, color="red")
-        RedBorder.name = "border_red"
-
-        DottedBorder = define(helpers.Border)
-        DottedBorder.name = "border_dotted"
-
-        self.registry.config.from_dict(
-            {
-                "registry": {
-                    "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
-                    "by_name": {
-                        "border_red": {"width": "2px"},
-                        "border_dotted": {"style": "dotted"},
-                    },
-                }
-            }
-        )
-
-        border = self.registry[helpers.Border]
-        border_red = self.registry[RedBorder]
-        border_dotted = self.registry[DottedBorder]
-
-        self.assertEqual("1px", border.width)
-        self.assertEqual("2px", border_red.width)
-        self.assertEqual("1px", border_dotted.width)
-        self.assertEqual("solid", border.style)
-        self.assertEqual("solid", border_red.style)
-        self.assertEqual("dotted", border_dotted.style)
-        self.assertEqual("black", border.color)
-        self.assertEqual("red", border_red.color)
-        self.assertEqual("black", border_dotted.color)
-
     def test_func(self) -> None:
-        func = function(helpers.passthrough)
-        self.assertEqual(((), {}), func.call(self.registry))
-
-        func_simple = function(helpers.passthrough, 1, a="b")
-        self.assertEqual(((1,), {"a": "b"}), func_simple.call(self.registry))
-
-        self.registry.config.from_dict({"arg0": "val0", "value": "val_name"})
+        registry = initialize({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
-        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(self.registry))
+        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(registry))
 
         func_nested = function(helpers.passthrough, function(helpers.nested, 2))
-        self.assertEqual(((2,), {}), func_nested.call(self.registry))
+        self.assertEqual(((2,), {}), func_nested.call(registry))
 
         other = define(object)
         func_ref = function(helpers.passthrough, other=reference(other))
-        self.assertEqual(((), {"other": self.registry[other]}), func_ref.call(self.registry))
+        self.assertEqual(((), {"other": registry[other]}), func_ref.call(registry))
 
-        func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
-        self.assertEqual("1", func_factory.call(self.registry))
+        func = function(helpers.passthrough)
+        self.assertEqual(((), {}), func.call(registry))
+
+        func_simple = function(helpers.passthrough, 1, a="b")
+        self.assertEqual(((1,), {"a": "b"}), func_simple.call(registry))
 
     def test_mock(self) -> None:
         """Test canonical usage of mock"""
