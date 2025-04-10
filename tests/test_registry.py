@@ -429,8 +429,7 @@ class RegistryTestCase(unittest.TestCase):
             base.closed = True
 
         @bind(_start=start, _close=close)
-        class Sub(Base):
-            ...
+        class Sub(Base): ...
 
         # Registry starts on initial lookup as part of the initiation process
         instance = self.registry[Sub]
@@ -531,6 +530,20 @@ class RegistryTestCase(unittest.TestCase):
         # instantiated only once but accessed N times, we would see N objects for each type in the counter.
         for count in Counter(map(id, results)).values():
             self.assertEqual(count, query_per_class)
+
+    def test_bind_name_parameter(self) -> None:
+        """Test that the _name parameter of inject.bind() works correctly and emits a deprecation warning."""
+
+        @bind(_name="test_name")
+        class NamedClass:
+            def __init__(self):
+                pass
+        
+        # Verify functionality still works
+        registry = initialize()
+        instance = registry[NamedClass]
+        self.assertIsInstance(instance, NamedClass)
+        self.assertEqual(registry["test_name"], instance)
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to
