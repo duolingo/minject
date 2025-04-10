@@ -58,6 +58,12 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 def bind(
     _name: Optional[str] = None, _start: None = None, _close: None = None, **bindings: DeferredAny
 ) -> Callable[[Type[T]], Type[T]]:
+    """Decorator to bind values for the init args of a class.
+    
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
     ...
 
 
@@ -68,7 +74,14 @@ def bind(
     _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
-) -> Callable[[Type[T]], Type[T]]: ...
+) -> Callable[[Type[T]], Type[T]]:
+    """Decorator to bind values for the init args of a class.
+    
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
+    ...
 
 
 def bind(
@@ -77,7 +90,12 @@ def bind(
     _close=None,
     **bindings,
 ):
-    """Decorator to bind values for the init args of a class."""
+    """Decorator to bind values for the init args of a class.
+    
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
 
     def wrap(cls: Type[T]) -> Type[T]:
         """Decorate a class with registry bindings."""
@@ -106,10 +124,16 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     meta.is_async_context = True
     return cls
 
+
 # TODO(1.0): deprecated, not used
 def name(name_):
     # type: (str) -> Callable[[Type[T]], Type[T]]
-    """Decorator to bind a registry name for a class."""
+    """Decorator to bind a registry name for a class.
+    
+    .. deprecated:: 1.0
+       This decorator is deprecated and should not be used in new code.
+       Do not assign a name to a binding.
+    """
 
     def wrap(cls):
         # type: (Type[T]) -> Type[T]
@@ -121,10 +145,14 @@ def name(name_):
     return wrap
 
 
-# TODO(1.0): deprecated, not used
 def start_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry start function for a class."""
+    """Function to bind a registry start function for a class.
+    
+    .. deprecated:: 1.0
+       This function is deprecated and should not be used in new code.
+       Use a context manager instead.
+    """
     if isinstance(cls, RegistryMetadata):
         meta = cls
     else:
@@ -132,10 +160,14 @@ def start_method(cls, method):
     meta._start = method
 
 
-# TODO(1.0): deprecated, not used
 def close_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry close function for a class."""
+    """Function to bind a registry close function for a class.
+    
+    .. deprecated:: 1.0
+       This function is deprecated and should not be used in new code.
+       Use a context manager instead.
+    """
     if isinstance(cls, RegistryMetadata):
         meta = cls
     else:
@@ -150,7 +182,12 @@ def define(
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> RegistryMetadata[T]:
-    """Create a new registry key based on a class and optional bindings."""
+    """Create a new registry key based on a class and optional bindings.
+    
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
     meta = _get_meta(base_class)
     if meta:
         meta = RegistryMetadata(
@@ -341,6 +378,11 @@ def function(
     func: Union[str, Callable[..., T]], *args: DeferredAny, **kwargs: DeferredAny
 ) -> _RegistryFunction[T]:
     """Bind a function to be run at init time.
+    
+    .. deprecated:: 1.0
+       Using a string as the func argument is deprecated and should not be used in new code.
+       Pass the function object directly instead.
+    
     Parameters:
         func: the function to call, should return a value to bind (this value
             can also be a reference). If func is a string, func will be

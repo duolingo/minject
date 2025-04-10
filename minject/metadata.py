@@ -114,7 +114,6 @@ class RegistryMetadata(Generic[T_co]):
         self._cls = cls
         self._bindings = bindings or {}
 
-        # TODO(1.0): deprecated, not used
         self._name = name
         self._start = start
         self._close = close

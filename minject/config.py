@@ -39,6 +39,11 @@ class RegistryConfigWrapper:
 
     def from_dict(self, config_dict: Union[Mapping[str, Any], InternalRegistryConfig]):
         """Configure the registry from a dictionary.
+        
+        .. deprecated:: 1.0
+           This method is deprecated and should not be used in new code.
+           Use the config parameter to Registry instead to specify config dictionaries. 
+
         The provided dictionary should contain general configuration that can
         be accessed using the inject.config decorator. If the key 'registry'
         is present in the dict, it will be used to configure the registry
@@ -67,7 +72,13 @@ class RegistryConfigWrapper:
         return item
 
     def get_init_kwargs(self, meta: "RegistryMetadata[T]") -> Kwargs:
-        """Get init kwargs configured for a given RegistryMetadata."""
+        """Get init kwargs configured for a given RegistryMetadata.
+        
+        .. deprecated:: 1.0
+           This method is deprecated and should not be used in new code.
+           Autostart from config is considered deprecated, however we
+           must support it temporarily for backwards compatability.
+        """
         result: Dict[str, Any] = {}
 
         reg_conf: Optional[RegistrySubConfig] = self._impl.get("registry")

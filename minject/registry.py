@@ -9,7 +9,7 @@ from textwrap import dedent
 from threading import RLock
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
 
-from typing_extensions import ParamSpec, Concatenate
+from typing_extensions import Concatenate, ParamSpec
 
 from minject.inject import _is_key_async, _RegistryReference, reference
 
@@ -35,10 +35,10 @@ class _AutoOrNone:
 AUTO_OR_NONE = _AutoOrNone()
 
 
-def initialize() -> "Registry":
+def initialize(config: Optional[RegistryInitConfig] = None) -> "Registry":
     """Initialize a new registry instance."""
     LOG.debug("initializing a new registry instance")
-    return Registry()
+    return Registry(config)
 
 
 def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
@@ -76,7 +76,7 @@ def _synchronized(
     """Decorator to synchronize method access with a reentrant lock."""
 
     @functools.wraps(func)
-    def wrapper(self: "Registry", *args: Any, **kwargs: Any) -> R:
+    def wrapper(self: "Registry", *args: P.args, **kwargs: P.kwargs) -> R:
         with self._lock:
             return func(self, *args, **kwargs)
 
@@ -91,7 +91,6 @@ class Registry(Resolver):
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
         self._by_iface: Dict[type, List[RegistryWrapper]] = {}
-
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
@@ -100,7 +99,7 @@ class Registry(Resolver):
         self._async_entered = False
 
         if config is not None:
-             self._config.from_dict(config)
+            self._config.from_dict(config)
 
     @property
     def config(self) -> RegistryConfigWrapper:
@@ -142,6 +141,10 @@ class Registry(Resolver):
         """
         Call start if defined on all objects contained in the registry.
         This includes any classes designated as autostart in config.
+        
+        .. deprecated:: 1.0
+           This method is deprecated and should not be used in new code.
+           Use the context manager API instead.
         """
         for key in self._autostart_candidates():
             LOG.debug("autostarting %s", key)
@@ -154,7 +157,12 @@ class Registry(Resolver):
 
     @_synchronized
     def close(self) -> None:
-        """Close all objects contained in the registry."""
+        """Close all objects contained in the registry.
+        
+        .. deprecated:: 1.0
+           This method is deprecated and should not be used in new code.
+           Use the context manager API instead.
+        """
         for wrapper in list(reversed(self._objects)):
             if wrapper._meta is not None:
                 # call the object's close method, if defined
