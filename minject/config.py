@@ -11,24 +11,8 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class _RegistrySubConfig(TypedDict, total=False):
-    """Configuration entries that apply to the registry itself."""
 
-    # A sequence of class names that should start at registry start time.
-    autostart: Sequence[str]
-    # Names of registry classes mapped to the kwarg dictionary that should be used to initialize
-    # the object of that type.
-    by_class: Mapping[str, Kwargs]
-    # Named registry entries that map to the kwarg dictionary that should be used to initialize
-    # the object for that name.
-    by_name: Mapping[str, Kwargs]
-
-
-class _InternalRegistryConfig(TypedDict, total=False):
-    registry: _RegistrySubConfig
-
-
-RegistryInitConfig = Union[Mapping[str, Any], _InternalRegistryConfig]
+RegistryInitConfig = Mapping[str, Any]
 
 
 class RegistryConfigWrapper:
@@ -37,23 +21,15 @@ class RegistryConfigWrapper:
     def __init__(self):
         self._impl = {}
 
-    def from_dict(self, config_dict: Union[Mapping[str, Any], _InternalRegistryConfig]):
-        """Configure the registry from a dictionary.
+    def from_dict(self, config_dict: Mapping[str, Any]):
+        """Configure the registry from a dictionary-like mapping.
+        The provided mapping should contain general configuration that can
+        be accessed using the inject.config decorator.
 
         .. deprecated:: 1.0
            This method is deprecated and should not be used in new code.
            Use the config parameter to Registry instead to specify config dictionaries.
 
-        The provided dictionary should contain general configuration that can
-        be accessed using the inject.config decorator. If the key 'registry'
-        is present in the dict, it will be used to configure the registry
-        itself. The following elements are recognized by the registry:
-            autostart: list of classes or names that the registry should
-                start by default.
-            by_class: dict of registry classes which map to a dict of
-                kwargs for initializing any object of that type.
-            by_name: dict of named registry entries which map to a dict of
-                kwargs for initializing that object.
         Parameters:
             config_dict: the configuration data to apply.
         """
