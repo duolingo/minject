@@ -41,7 +41,7 @@ def initialize(config: Optional[RegistryInitConfig] = None) -> "Registry":
     return Registry(config)
 
 
-def _unwrap(wrapper: Optional["RegistryWrapper[T]"]) -> Optional[T]:
+def _unwrap(wrapper: Optional["_RegistryWrapper[T]"]) -> Optional[T]:
     return wrapper.obj if wrapper else None
 
 
@@ -51,7 +51,7 @@ def _resolve_import(value: str) -> RegistryKey:
     return getattr(module, var_name)
 
 
-class RegistryWrapper(Generic[T]):
+class _RegistryWrapper(Generic[T]):
     """Simple wrapper around registered objects for tracking."""
 
     def __init__(self, obj: T, _meta: Optional[RegistryMetadata[T]] = None) -> None:
@@ -87,10 +87,10 @@ class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
     def __init__(self, config: Optional[RegistryInitConfig] = None):
-        self._objects: List[RegistryWrapper] = []
-        self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
-        self._by_name: Dict[str, RegistryWrapper] = {}
-        self._by_iface: Dict[type, List[RegistryWrapper]] = {}
+        self._objects: List[_RegistryWrapper] = []
+        self._by_meta: Dict[RegistryMetadata, _RegistryWrapper] = {}
+        self._by_name: Dict[str, _RegistryWrapper] = {}
+        self._by_iface: Dict[type, List[_RegistryWrapper]] = {}
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
@@ -181,7 +181,7 @@ class Registry(Resolver):
         """
         LOG.debug("registering %s (name=%s, interfaces=%s)", obj, name, interfaces)
 
-        wrapper = RegistryWrapper(obj)
+        wrapper = _RegistryWrapper(obj)
 
         # add to our list of all objects
         self._objects.append(wrapper)
@@ -199,8 +199,8 @@ class Registry(Resolver):
     @_synchronized
     def _set_by_metadata(
         self, meta: RegistryMetadata[T], obj: T, _global: bool = True
-    ) -> RegistryWrapper[T]:
-        wrapper = RegistryWrapper(obj, meta)
+    ) -> _RegistryWrapper[T]:
+        wrapper = _RegistryWrapper(obj, meta)
 
         if _global:
             self._objects.append(wrapper)
@@ -217,7 +217,7 @@ class Registry(Resolver):
 
     @_synchronized
     def _remove_by_metadata(
-        self, meta: RegistryMetadata[T], wrapper: RegistryWrapper[T], _global: bool = True
+        self, meta: RegistryMetadata[T], wrapper: _RegistryWrapper[T], _global: bool = True
     ) -> None:
         if _global:
             self._objects.remove(wrapper)
@@ -232,7 +232,7 @@ class Registry(Resolver):
                     obj_list.remove(wrapper)
 
     @_synchronized
-    def _register_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
+    def _register_by_metadata(self, meta: RegistryMetadata[T]) -> _RegistryWrapper[T]:
         LOG.debug("registering %s", meta)
 
         # allocate the object (but don't initialize yet)
@@ -257,7 +257,7 @@ class Registry(Resolver):
 
         return wrapper
 
-    async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> RegistryWrapper[T]:
+    async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> _RegistryWrapper[T]:
         """
         async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
         """
@@ -292,7 +292,7 @@ class Registry(Resolver):
     @_synchronized
     def _get_by_metadata(
         self, meta: RegistryMetadata[T], default: Optional[Union[T, _AutoOrNone]] = AUTO_OR_NONE
-    ) -> Optional[RegistryWrapper[T]]:
+    ) -> Optional[_RegistryWrapper[T]]:
         """
         Get a registered object by metadata.
         Parameters:
@@ -310,11 +310,11 @@ class Registry(Resolver):
         if default is AUTO_OR_NONE:
             return self._register_by_metadata(meta)
         elif default is not None:
-            return RegistryWrapper(cast(T, default))
+            return _RegistryWrapper(cast(T, default))
         else:
             return None
 
-    async def _aget_by_metadata(self, meta: RegistryMetadata[T]) -> Optional[RegistryWrapper[T]]:
+    async def _aget_by_metadata(self, meta: RegistryMetadata[T]) -> Optional[_RegistryWrapper[T]]:
         """
         async version of _get_by_metadata. The default argument has been removed
         from the signature, as there is no use case for it at the time of writing.
@@ -374,7 +374,7 @@ class Registry(Resolver):
             return None  # NEVER auto-init plain object
 
         if isinstance(key, str):
-            return _unwrap(self._by_name.get(key, RegistryWrapper(cast(T, default))))
+            return _unwrap(self._by_name.get(key, _RegistryWrapper(cast(T, default))))
 
         meta = _get_meta_from_key(key)
         maybe_class = self._get_if_already_in_registry(key, meta)
