@@ -181,19 +181,21 @@ class RegistryTestCase(unittest.TestCase):
         DottedBorder = define(helpers.Border)
         DottedBorder.name = "border_dotted"
 
-        registry = initialize(
+        self.registry.config.from_dict(
             {
-                "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
-                "by_name": {
-                    "border_red": {"width": "2px"},
-                    "border_dotted": {"style": "dotted"},
-                },
+                "minject": {
+                    "by_class": {"tests.test_registry_helpers.Border": {"style": "solid"}},
+                    "by_name": {
+                        "border_red": {"width": "2px"},
+                        "border_dotted": {"style": "dotted"},
+                    },
+                }
             }
         )
 
-        border = registry[helpers.Border]
-        border_red = registry[RedBorder]
-        border_dotted = registry[DottedBorder]
+        border = self.registry[helpers.Border]
+        border_red = self.registry[RedBorder]
+        border_dotted = self.registry[DottedBorder]
 
         self.assertEqual("1px", border.width)
         self.assertEqual("2px", border_red.width)
@@ -206,25 +208,25 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual("black", border_dotted.color)
 
     def test_func(self) -> None:
-        registry = initialize({"arg0": "val0", "value": "val_name"})
+        func = function(helpers.passthrough)
+        self.assertEqual(((), {}), func.call(self.registry))
+
+        func_simple = function(helpers.passthrough, 1, a="b")
+        self.assertEqual(((1,), {"a": "b"}), func_simple.call(self.registry))
+
+        self.registry.config.from_dict({"arg0": "val0", "value": "val_name"})
         func_config = function(helpers.passthrough, config("arg0"), name=config("value"))
-        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(registry))
+        self.assertEqual((("val0",), {"name": "val_name"}), func_config.call(self.registry))
 
         func_nested = function(helpers.passthrough, function(helpers.nested, 2))
-        self.assertEqual(((2,), {}), func_nested.call(registry))
+        self.assertEqual(((2,), {}), func_nested.call(self.registry))
 
         other = define(object)
         func_ref = function(helpers.passthrough, other=reference(other))
-        self.assertEqual(((), {"other": registry[other]}), func_ref.call(registry))
+        self.assertEqual(((), {"other": self.registry[other]}), func_ref.call(self.registry))
 
         func_factory: _RegistryFunction[str] = function("create", reference(helpers.Factory), 1)
-        self.assertEqual("1", func_factory.call(registry))
-
-        func = function(helpers.passthrough)
-        self.assertEqual(((), {}), func.call(registry))
-
-        func_simple = function(helpers.passthrough, 1, a="b")
-        self.assertEqual(((1,), {"a": "b"}), func_simple.call(registry))
+        self.assertEqual("1", func_factory.call(self.registry))
 
     def test_mock(self) -> None:
         """Test canonical usage of mock"""
@@ -398,14 +400,16 @@ class RegistryTestCase(unittest.TestCase):
         mocked.b.upper.assert_not_called()
 
     def test_autostart(self) -> None:
-        registry = initialize({"autostart": ["tests.test_registry_helpers.FakeWorker"]})
+        self.registry.config.from_dict(
+            {"minject": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
+        )
 
-        registry.start()
+        self.registry.start()
         self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
         self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
         self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
-        registry.close()
+        self.registry.close()
         self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
 
     def test_self(self) -> None:
