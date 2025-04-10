@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar
 
 from typing_extensions import TypedDict
 
@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 # Unbound, invariant type variable
 T = TypeVar("T")
-
 
 
 RegistryInitConfig = Mapping[str, Any]
