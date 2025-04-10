@@ -343,13 +343,20 @@ def function(
     func: Callable[..., T], *args: DeferredAny, **kwargs: DeferredAny
 ) -> _RegistryFunction[T]:
     """Bind a function to be run at init time.
-
     Parameters:
         func: the function to call, should return a value to bind (this value
-            can also be a reference).
+            can also be a reference). If func is a string, func will be
+            determined by calling getattr on the first positional argument.
         args: positional arguments that should be passed to the function.
         kwargs: keyword arguments that should be passed to the function.
     """
+    if isinstance(func, str):
+        if not args:
+            raise ValueError(
+                "registry.function using a string must have a "
+                "positional argument to call getattr on"
+            )
+
     return _RegistryFunction(func, *args, **kwargs)
 
 
