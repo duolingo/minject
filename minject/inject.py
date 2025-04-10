@@ -548,3 +548,7 @@ class _RegistrySelf(Deferred[Resolver]):
 
 
 self_tag = _RegistrySelf()
+
+# we must export this from minject to provide backwards
+# compatability to a legacy system
+__all__ = ["_get_meta"]
