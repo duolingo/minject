@@ -86,7 +86,7 @@ def _synchronized(
 class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
-    def __init__(self):
+    def __init__(self, config: Optional[RegistryInitConfig] = None):
         self._objects: List[RegistryWrapper] = []
         self._by_meta: Dict[RegistryMetadata, RegistryWrapper] = {}
         self._by_name: Dict[str, RegistryWrapper] = {}
@@ -98,6 +98,9 @@ class Registry(Resolver):
 
         self._async_context_stack: AsyncExitStack = AsyncExitStack()
         self._async_entered = False
+
+        if config is not None:
+             self._config.from_dict(config)
 
     @property
     def config(self) -> RegistryConfigWrapper:
