@@ -7,13 +7,13 @@ from asyncio import to_thread
 from contextlib import AsyncExitStack
 from textwrap import dedent
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar, Union, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
 from minject.inject import _is_key_async, _RegistryReference, reference
 
-from .config import RegistryConfigWrapper, RegistryInitConfig, _RegistrySubConfig
+from .config import RegistryConfigWrapper, RegistryInitConfig
 from .metadata import RegistryMetadata, _get_meta, _get_meta_from_key
 from .model import RegistryKey, Resolvable, Resolver, aresolve_value, resolve_value
 
@@ -129,7 +129,7 @@ class Registry(Resolver):
             )
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Optional[_RegistrySubConfig] = self.config.get("registry")
+        registry_config: Mapping[str, Any] = self.config.get("registry")
         if registry_config:
             autostart = registry_config.get("autostart")
             if autostart:
