@@ -111,6 +111,10 @@ class RegistryMetadata(Generic[T_co]):
         is_async_context: bool = False,
         key: Optional[Hashable] = None,
     ):
+        """
+        .. deprecated:: 1.0
+            The `name`, `start`, `close`, are deprecated and should not be used in new code.
+        """
         self._cls = cls
         self._bindings = bindings or {}
 
