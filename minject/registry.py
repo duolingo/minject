@@ -133,7 +133,9 @@ class Registry(Resolver):
 
     @_synchronized
     def close(self) -> None:
-        """Close all objects contained in the registry."""
+        """
+        Close all objects contained in the registry.
+        """
         for wrapper in list(reversed(self._objects)):
             if wrapper._meta is not None:
                 # call the object's close method, if defined
