@@ -129,10 +129,9 @@ class Registry(Resolver):
             )
 
     def _autostart_candidates(self) -> Iterable[RegistryKey]:
-        registry_config: Mapping[str, Any] = self.config.get("registry")
-        if registry_config:
-            autostart = registry_config.get("autostart")
-            if autostart:
+        registry_config: Optional[Mapping[str, Any]] = self.config.get("registry")
+        if registry_config is not None:
+            if (autostart := registry_config.get("autostart")) is not None:
                 return (_resolve_import(value) for value in autostart)
         return ()
 
@@ -148,7 +147,7 @@ class Registry(Resolver):
         """
         for key in self._autostart_candidates():
             LOG.debug("autostarting %s", key)
-            self[key]  # pylint: disable=pointless-statement
+            _ = self[key]
 
         for wrapper in list(self._objects):
             if wrapper._meta is not None:
