@@ -87,10 +87,10 @@ class Registry(Resolver):
     """Tracks and manages registered object instances."""
 
     def __init__(self, config: Optional[RegistryInitConfig] = None):
-        self._objects: List[_RegistryWrapper] = []
-        self._by_meta: Dict[RegistryMetadata, _RegistryWrapper] = {}
-        self._by_name: Dict[str, _RegistryWrapper] = {}
-        self._by_iface: Dict[type, List[_RegistryWrapper]] = {}
+        self._objects: List[_RegistryWrapper[Any]] = []
+        self._by_meta: Dict[RegistryMetadata, _RegistryWrapper[Any]] = {}
+        self._by_name: Dict[str, _RegistryWrapper[Any]] = {}
+        self._by_iface: Dict[type, List[_RegistryWrapper[Any]]] = {}
         self._config = RegistryConfigWrapper()
 
         self._lock = RLock()
@@ -328,7 +328,7 @@ class Registry(Resolver):
     def __len__(self) -> int:
         return len(self._objects)
 
-    def __contains__(self, key) -> bool:
+    def __contains__(self, key : object) -> bool:
         """Check if an object is contained in the registry.
         Note that this method returns True if the object has already been
         registered. It is possible that the key provides enough information
