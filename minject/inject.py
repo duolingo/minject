@@ -125,7 +125,8 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
 
 def start_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry start function for a class.
+    """Function to bind a registry start function for a class. Throws
+       ValueError if the start function is already set.
 
     .. deprecated:: 1.0
        This function is deprecated and should not be used in new code.
@@ -135,12 +136,17 @@ def start_method(cls, method):
         meta = cls
     else:
         meta = _gen_meta(cls)
+
+    if meta._start is not None:
+        raise ValueError("Cannot modify start with decorator if it is already set")
+
     meta._start = method
 
 
 def close_method(cls, method):
     # type: (Type[T], Callable[[T], None]) -> None
-    """Function to bind a registry close function for a class.
+    """Function to bind a registry close function for a class. Throws
+       ValueError if the close function is already set.
 
     .. deprecated:: 1.0
        This function is deprecated and should not be used in new code.
@@ -150,6 +156,10 @@ def close_method(cls, method):
         meta = cls
     else:
         meta = _gen_meta(cls)
+
+    if meta._close is not None:
+        raise ValueError("Cannot modify close with decorator if it is already set")
+
     meta._close = method
 
 

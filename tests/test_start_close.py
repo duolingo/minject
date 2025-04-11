@@ -1,5 +1,6 @@
 import unittest
 
+from minject import inject
 from minject.inject import close_method, start_method
 from minject.registry import initialize
 
@@ -99,3 +100,32 @@ class TestStartStopDecorators(unittest.TestCase):
         # Verify the close function was called
         self.assertTrue(self.close_called)
         self.assertEqual(instance.value, 2)
+
+    def test_start_method_decorator_duplicate(self) -> None:
+        """Test that start_method decorator correctly sets up a start function."""
+
+        def start_func(obj : "TestClass") -> None:
+            ...
+
+        def close_func(obj : "TestClass") -> None:
+            ...
+
+        @inject.bind(_start=start_func, _close=close_func)
+        class TestClass:
+            def __init__(self) -> None:
+                self.value = 0
+
+            def increment(self) -> None:
+                self.value += 1
+
+            def noop(self) -> None:
+                pass
+
+        # assert raises ValueError
+        with self.assertRaises(ValueError):
+            start_method(TestClass, lambda x: x.noop())
+
+        with self.assertRaises(ValueError):
+            close_method(TestClass, lambda x: x.noop())
+
+
