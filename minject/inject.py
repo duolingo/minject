@@ -511,4 +511,16 @@ self_tag = _RegistrySelf()
 
 # we must export this from minject to provide backwards
 # compatability to a legacy system
-__all__ = ["_get_meta"]
+__all__ = [
+    "_get_meta",
+    "bind",
+    "config",
+    "nested_config",
+    "define",
+    "function",
+    "reference",
+    "self_tag",
+    "start_method", # deprecated
+    "close_method", # deprecated
+    "async_context",
+]
