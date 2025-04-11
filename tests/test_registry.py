@@ -496,7 +496,7 @@ class RegistryTestCase(unittest.TestCase):
             self.assertEqual(count, query_per_class)
 
     def test_bind_name_parameter(self) -> None:
-        """Test that the _name parameter of inject.bind() works correctly and emits a deprecation warning."""
+        """Test that the _name parameter of inject.bind() works correctly"""
 
         @bind(_name="test_name")
         class NamedClass:
