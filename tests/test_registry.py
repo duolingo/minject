@@ -363,26 +363,45 @@ class RegistryTestCase(unittest.TestCase):
         mocked.a.upper.assert_called_once()
         mocked.b.upper.assert_not_called()
 
+    def test_autostart(self) -> None:
+        self.registry.config.from_dict(
+            {"registry": {"autostart": ["tests.test_registry_helpers.FakeWorker"]}}
+        )
+
+        self.registry.start()
+        self.assertIsNotNone(getattr(helpers.FakeWorker, "instance", None))
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_started", False))  # type: ignore
+        self.assertFalse(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
+
+        self.registry.close()
+        self.assertTrue(getattr(helpers.FakeWorker.instance, "_closed", False))  # type: ignore
+
     def test_self(self) -> None:
         func_logic = function(helpers.logic, self_tag)
         self.assertEqual(self.registry, func_logic.call(self.registry))
 
-    def test_inherited_stop(self) -> None:
+    def test_inherited_start_stop(self) -> None:
         class Base:
             def __init__(self):
+                self.started: bool = False
                 self.closed: bool = False
+
+        def start(base: Base):
+            base.started = True
 
         def close(base: Base):
             base.closed = True
 
-        @bind(_close=close)
+        @bind(_start=start, _close=close)
         class Sub(Base): ...
 
         # Registry starts on initial lookup as part of the initiation process
         instance = self.registry[Sub]
+        assert instance.started == True
         assert instance.closed == False
         # Close the registry
         self.registry.close()
+        assert instance.started == True
         assert instance.closed == True
 
     def test_multiple_deferred_bindings(self) -> None:
@@ -475,6 +494,20 @@ class RegistryTestCase(unittest.TestCase):
         # instantiated only once but accessed N times, we would see N objects for each type in the counter.
         for count in Counter(map(id, results)).values():
             self.assertEqual(count, query_per_class)
+
+    def test_bind_name_parameter(self) -> None:
+        """Test that the _name parameter of inject.bind() works correctly"""
+
+        @bind(_name="test_name")
+        class NamedClass:
+            def __init__(self):
+                pass
+
+        # Verify functionality still works
+        registry = initialize()
+        instance = registry[NamedClass]
+        self.assertIsInstance(instance, NamedClass)
+        self.assertEqual(registry["test_name"], instance)
 
 
 # "Test"/check type hints.  These are not meant to be run by the unit test runner, but instead to

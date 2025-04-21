@@ -20,10 +20,14 @@ class RegistryConfigWrapper:
     def __init__(self):
         self._impl = {}
 
-    def _from_dict(self, config_dict: RegistryInitConfig):
+    def from_dict(self, config_dict: Mapping[str, Any]):
         """Configure the registry from a dictionary-like mapping.
         The provided mapping should contain general configuration that can
         be accessed using the inject.config decorator.
+
+        .. deprecated:: 1.0
+           This method is deprecated and should not be used in new code.
+           Use the config parameter to Registry instead to specify config dictionaries.
 
         Parameters:
             config_dict: the configuration data to apply.

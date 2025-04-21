@@ -55,26 +55,53 @@ RAISE_KEY_ERROR = _RaiseKeyError()
 
 # Overload for when we _cannot_ infer what `T` will be from a call to bind
 @overload
-def bind(_close: None = None, **bindings: DeferredAny) -> Callable[[Type[T]], Type[T]]: ...
+def bind(
+    _name: Optional[str] = None, _start: None = None, _close: None = None, **bindings: DeferredAny
+) -> Callable[[Type[T]], Type[T]]:
+    """Decorator to bind values for the init args of a class.
+
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
 
 
 # Overload for when we _can_ infer what `T` will be from a call to bind.
 @overload
 def bind(
+    _name: Optional[str] = None,
+    _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
-) -> Callable[[Type[T]], Type[T]]: ...
+) -> Callable[[Type[T]], Type[T]]:
+    """Decorator to bind values for the init args of a class.
+
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
 
 
 def bind(
+    _name=None,
+    _start=None,
     _close=None,
     **bindings,
 ):
-    """Decorator to bind values for the init args of a class."""
+    """Decorator to bind values for the init args of a class.
+
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
 
     def wrap(cls: Type[T]) -> Type[T]:
         """Decorate a class with registry bindings."""
         meta = _gen_meta(cls)
+        if _name:
+            meta._name = _name
+        if _start:
+            meta._start = _start
         if _close:
             meta._close = _close
         meta.update_bindings(**bindings)
@@ -96,12 +123,59 @@ def async_context(cls: Type[T_async_context]) -> Type[T_async_context]:
     return cls
 
 
+def start_method(cls, method):
+    # type: (Type[T], Callable[[T], None]) -> None
+    """Function to bind a registry start function for a class. Throws
+       ValueError if the start function is already set.
+
+    .. deprecated:: 1.0
+       This function is deprecated and should not be used in new code.
+       Use a context manager instead.
+    """
+    if isinstance(cls, RegistryMetadata):
+        meta = cls
+    else:
+        meta = _gen_meta(cls)
+
+    if meta._start is not None:
+        raise ValueError("Cannot modify start with decorator if it is already set")
+
+    meta._start = method
+
+
+def close_method(cls, method):
+    # type: (Type[T], Callable[[T], None]) -> None
+    """Function to bind a registry close function for a class. Throws
+       ValueError if the close function is already set.
+
+    .. deprecated:: 1.0
+       This function is deprecated and should not be used in new code.
+       Use a context manager instead.
+    """
+    if isinstance(cls, RegistryMetadata):
+        meta = cls
+    else:
+        meta = _gen_meta(cls)
+
+    if meta._close is not None:
+        raise ValueError("Cannot modify close with decorator if it is already set")
+
+    meta._close = method
+
+
 def define(
     base_class: Type[T],
+    _name: Optional[str] = None,
+    _start: Optional[Callable[[T], None]] = None,
     _close: Optional[Callable[[T], None]] = None,
     **bindings: DeferredAny,
 ) -> RegistryMetadata[T]:
-    """Create a new registry key based on a class and optional bindings."""
+    """Create a new registry key based on a class and optional bindings.
+
+    .. deprecated:: 1.0
+       The _name and _start parameters are deprecated and should not be used in new code.
+       To replace _start, use a context manager instead. There is no replacement for _name.
+    """
     meta = _get_meta(base_class)
     if meta:
         meta = RegistryMetadata(
@@ -110,6 +184,8 @@ def define(
         meta.update_bindings(**bindings)
     else:
         meta = RegistryMetadata(base_class, bindings=bindings)
+    meta._name = _name
+    meta._start = _start
     meta._close = _close
     return meta
 
@@ -212,7 +288,7 @@ def reference(key, **bindings):
     if not bindings:
         return _RegistryReference(key)
     elif isinstance(key, type):
-        return _RegistryReference(define(key, None, **bindings))
+        return _RegistryReference(define(key, None, None, None, **bindings))
     else:
         raise TypeError("inject.reference can only include bindings on classes")
 
@@ -442,3 +518,19 @@ class _RegistrySelf(Deferred[Resolver]):
 
 
 self_tag = _RegistrySelf()
+
+# we must export this from minject to provide backwards
+# compatability to a legacy system
+__all__ = [
+    "_get_meta",
+    "bind",
+    "config",
+    "nested_config",
+    "define",
+    "function",
+    "reference",
+    "self_tag",
+    "start_method", # deprecated
+    "close_method", # deprecated
+    "async_context",
+]
