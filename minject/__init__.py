@@ -51,9 +51,9 @@ from .inject_attrs import inject_define as define, inject_field as field
 from .registry import Registry, initialize
 
 __all__ = [
+    "Registry",
     "define",
     "field",
-    "inject",
     "initialize",
-    "Registry",
+    "inject",
 ]

@@ -7,7 +7,19 @@ from asyncio import to_thread
 from contextlib import AsyncExitStack
 from textwrap import dedent
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -258,7 +270,7 @@ class Registry(Resolver):
 
     async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> _RegistryWrapper[T]:
         """
-        async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
+        Async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
         """
         LOG.debug("registering %s", meta)
 
@@ -315,7 +327,7 @@ class Registry(Resolver):
 
     async def _aget_by_metadata(self, meta: RegistryMetadata[T]) -> Optional[_RegistryWrapper[T]]:
         """
-        async version of _get_by_metadata. The default argument has been removed
+        Async version of _get_by_metadata. The default argument has been removed
         from the signature, as there is no use case for it at the time of writing.
         Please make a feature request if you need this functionality.
         """
@@ -328,7 +340,7 @@ class Registry(Resolver):
     def __len__(self) -> int:
         return len(self._objects)
 
-    def __contains__(self, key : object) -> bool:
+    def __contains__(self, key: object) -> bool:
         """Check if an object is contained in the registry.
         Note that this method returns True if the object has already been
         registered. It is possible that the key provides enough information

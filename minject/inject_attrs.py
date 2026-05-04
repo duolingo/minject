@@ -56,7 +56,7 @@ _ATTRS_DEFINE_DISABLE_EVERYTHING_BUT_INIT: List[_AttrDefineKwarg] = [
 
 def _get_compatible_attrs_define_kwargs() -> Dict[str, bool]:
     """
-    get kwargs compatible with current running version of attrs
+    Get kwargs compatible with current running version of attrs
     """
     from importlib.metadata import version as importlib_version
 
@@ -78,7 +78,7 @@ def _get_compatible_attrs_define_kwargs() -> Dict[str, bool]:
 
 @dataclass(frozen=True)
 class _BindingKey:
-    __slots__ = ("filename", "class_lineno")
+    __slots__ = ("class_lineno", "filename")
     filename: str
     class_lineno: int  # The line containing the "class" keyword.
 
