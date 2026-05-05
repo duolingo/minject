@@ -530,7 +530,7 @@ __all__ = [
     "function",
     "reference",
     "self_tag",
-    "start_method", # deprecated
-    "close_method", # deprecated
+    "start_method",  # deprecated
+    "close_method",  # deprecated
     "async_context",
 ]

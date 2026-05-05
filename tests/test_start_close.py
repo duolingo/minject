@@ -104,11 +104,9 @@ class TestStartStopDecorators(unittest.TestCase):
     def test_start_method_decorator_duplicate(self) -> None:
         """Test that start_method decorator correctly sets up a start function."""
 
-        def start_func(obj : "TestClass") -> None:
-            ...
+        def start_func(obj: "TestClass") -> None: ...
 
-        def close_func(obj : "TestClass") -> None:
-            ...
+        def close_func(obj: "TestClass") -> None: ...
 
         @inject.bind(_start=start_func, _close=close_func)
         class TestClass:
@@ -127,5 +125,3 @@ class TestStartStopDecorators(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             close_method(TestClass, lambda x: x.noop())
-
-

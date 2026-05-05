@@ -7,7 +7,19 @@ from asyncio import to_thread
 from contextlib import AsyncExitStack
 from textwrap import dedent
 from threading import RLock
-from typing import Any, Callable, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -328,7 +340,7 @@ class Registry(Resolver):
     def __len__(self) -> int:
         return len(self._objects)
 
-    def __contains__(self, key : object) -> bool:
+    def __contains__(self, key: object) -> bool:
         """Check if an object is contained in the registry.
         Note that this method returns True if the object has already been
         registered. It is possible that the key provides enough information
