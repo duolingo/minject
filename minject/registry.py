@@ -270,7 +270,7 @@ class Registry(Resolver):
 
     async def _aregister_by_metadata(self, meta: RegistryMetadata[T]) -> _RegistryWrapper[T]:
         """
-        async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
+        Async version of _register_by_metadata. Calls _ainit_object instead of _init_object.
         """
         LOG.debug("registering %s", meta)
 
@@ -327,7 +327,7 @@ class Registry(Resolver):
 
     async def _aget_by_metadata(self, meta: RegistryMetadata[T]) -> Optional[_RegistryWrapper[T]]:
         """
-        async version of _get_by_metadata. The default argument has been removed
+        Async version of _get_by_metadata. The default argument has been removed
         from the signature, as there is no use case for it at the time of writing.
         Please make a feature request if you need this functionality.
         """

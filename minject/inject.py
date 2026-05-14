@@ -523,14 +523,14 @@ self_tag = _RegistrySelf()
 # compatability to a legacy system
 __all__ = [
     "_get_meta",
+    "async_context",
     "bind",
+    "close_method",  # deprecated
     "config",
-    "nested_config",
     "define",
     "function",
+    "nested_config",
     "reference",
     "self_tag",
     "start_method",  # deprecated
-    "close_method",  # deprecated
-    "async_context",
 ]
