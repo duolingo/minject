@@ -41,7 +41,4 @@ class RegistryConfigWrapper:
         return self._impl.get(key, default)
 
     def __getitem__(self, key: str) -> Any:
-        item: Optional[Any] = self.get(key)
-        if item is None:
-            raise KeyError(key)
-        return item
+        return self._impl[key]
