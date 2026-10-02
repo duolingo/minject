@@ -39,6 +39,21 @@ def test_config_simple(reg: Registry) -> None:
     assert config.envvar == 3
 
 
+@pytest.mark.parametrize("value", [None, False, 0, ""])
+def test_config_explicit_falsy_value(value: Any) -> None:
+    reg = Registry({"REQUIRED": value, "OPTIONAL": value, "ENVVAR": value})
+    with mock.patch.dict("os.environ", {"ENVVAR": "fallback"}):
+        config = reg[Configable]
+    assert config.required is value
+    assert config.optional is value
+    assert config.envvar is value
+
+
+def test_config_missing_key(reg: Registry) -> None:
+    with pytest.raises(KeyError, match="missing"):
+        _ = reg.config["missing"]
+
+
 def test_config_required(reg: Registry) -> None:
     reg.config.from_dict({"OPTIONAL": 2, "ENVVAR": 3})
 
