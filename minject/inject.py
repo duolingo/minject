@@ -284,7 +284,14 @@ def reference(key: Type[T], **bindings: DeferredAny) -> _RegistryReference[T]: .
 
 
 def reference(key, **bindings):
-    """Return a reference to another registry key."""
+    """Return a deferred lookup of an object in the resolving registry.
+
+    ``key`` can be a class, metadata returned by ``inject.define``, or a
+    registered string name. The returned reference is a binding instruction,
+    not an instance: the registry resolves it when constructing its consumer.
+    With a class key, keyword bindings override its construction bindings as
+    in ``inject.define(key, **bindings)``.
+    """
     if not bindings:
         return _RegistryReference(key)
     elif isinstance(key, type):

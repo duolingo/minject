@@ -285,14 +285,61 @@ with `inject.reference` and `inject.function`.
 
 ## Understand `inject.reference`
 
-Use `inject.reference` when you need to reference the dependency resolution
-definition of another class while constructing a dependency resolution
-definition. `inject.reference` receives as an argument either a class that contains dependency resolution definitions added through
-`inject.bind`, or dependency resolution definitions constructed through `inject.define`.
+A **registry key** identifies the object to retrieve from a `Registry`. A key can be:
 
-The following code snippet shows how to use `inject.reference`:
+- A class, such as `Database`, whose construction instructions are attached by
+  `@inject.bind`.
+- A `RegistryMetadata` object returned by `inject.define(Database, ...)`, which
+  describes a particular configuration of that class.
+- A string name assigned to an existing object, for example with
+  `registry["database"] = database`.
 
-https://github.com/duolingo/minject/blob/09b4bff2ed0c89a2751e121d369ebfdc2c069ee1/docs/dependency_injection_examples/inject_examples.py#L39-L63
+`inject.reference(key)` returns a deferred reference, not the requested object
+or the class itself. Use it as a binding in `inject.bind` or `inject.define`.
+When the registry constructs the object that contains that binding, it resolves
+that reference in the same registry and passes the resulting instance to the
+constructor. A missing string key raises `KeyError`; a string alone does not
+provide instructions for constructing an object.
+
+`@inject.bind` decorates the class and records construction instructions. It does
+not instantiate the class. For example:
+
+```python
+from minject import Registry, inject
+
+@inject.bind(name="primary")
+class Database:
+    def __init__(self, name):
+        self.name = name
+
+@inject.bind(database=inject.reference(Database))
+class Service:
+    def __init__(self, database):
+        self.database = database
+
+registry = Registry()
+service = registry[Service]
+assert service.database is registry[Database]
+assert service.database.name == "primary"
+
+replica = inject.define(Database, name="replica")
+replica_service = inject.define(Service, database=inject.reference(replica))
+assert registry[replica_service].database is registry[replica]
+assert registry[replica].name == "replica"
+assert registry[replica] is not registry[Database]
+
+registry["external_database"] = Database("external")
+external_service = inject.define(
+    Service, database=inject.reference("external_database")
+)
+assert registry[external_service].database is registry["external_database"]
+```
+
+The class and metadata keys above create an instance on first lookup and reuse
+it on subsequent lookups in that registry. Different registries manage their own
+instances. Passing keyword bindings to `inject.reference(Database, name="replica")`
+is shorthand for referencing `inject.define(Database, name="replica")`; keyword
+bindings are only accepted when the key is a class.
 
 ## Understand `inject.function`
 
