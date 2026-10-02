@@ -454,7 +454,7 @@ class Registry(Resolver):
         self._async_entered = True
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+    async def __aexit__(self, exc_type, exc_value, traceback) -> Optional[bool]:
         """
         Closes the registry. Closes all contexts on the registry's context stack
         and then closes the registry itself with regisry.close().
@@ -466,7 +466,7 @@ class Registry(Resolver):
         self._async_entered = False
         # close all objects in the registry
         try:
-            await self._async_context_stack.aclose()
+            return await self._async_context_stack.__aexit__(exc_type, exc_value, traceback)
         finally:
             # as we currently only support async -> sync transitions,
             # a sync class cannot depend on an async class, and thus we may
