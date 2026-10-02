@@ -334,6 +334,36 @@ async def test_exit_logic_failure(registry: Registry) -> None:
     assert my_cls.sync_close_dep.closed == True
 
 
+@pytest.mark.parametrize("suppress", [False, True])
+async def test_exit_receives_body_exception(registry: Registry, suppress: bool) -> None:
+    seen = []
+    error = ValueError("body failed")
+
+    @async_context
+    class ObservingContext:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            seen.append((exc_type, exc_value, traceback))
+            return suppress
+
+    caught = None
+    try:
+        async with registry:
+            sync = registry[MySyncClassWithCloseMethod]
+            await registry.aget(ObservingContext)
+            raise error
+    except ValueError as exception:
+        caught = exception
+
+    assert seen[0][0] is ValueError
+    assert seen[0][1] is error
+    assert seen[0][2] is not None
+    assert caught is (None if suppress else error)
+    assert sync.closed
+
+
 async def test_async_contains(registry: Registry) -> None:
     async with registry as r:
         assert (MyAsyncApi in r) is False
