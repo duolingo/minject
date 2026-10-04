@@ -22,7 +22,7 @@ accomplish this we follow these principles:
 - **Work as plain Python**: Dependency injection must be easy to ignore. You can
   always use `minject` classes as if they were regular classes.
 
-Here's an [example](docs/examples/philosophy.py) to demonstrate:
+Here's an [example](https://github.com/duolingo/minject/blob/master/docs/examples/philosophy.py) to demonstrate:
 
 ```python
 import minject
