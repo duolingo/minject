@@ -9,6 +9,7 @@ description = "A small dependency injection library for Python."
 dynamic = ["version"]
 license = { file = "LICENSE" }
 name = "minject"
+readme = "README.md"
 requires-python = ">=3.9"
 
 dependencies = ["attrs>=17.4", "packaging", "typing_extensions>=4.1"]
