@@ -17,7 +17,7 @@ _INJECT_DEFINE_DEFINE_KWARGS_DEFAULT_VAL: Dict[str, Any] = {}
 class _AttrDefineKwarg:
     """
     Class to hold kwargs for attr.define. Includes what version
-    a value was added as a paramter to attr.define. This is used
+    a value was added as a parameter to attr.define. This is used
     to disable features not tied to generating __init__ methods.
     """
 
@@ -25,12 +25,12 @@ class _AttrDefineKwarg:
         self,
         key_word: str,
         attr_version_start: str,
-        attr_verson_end: Optional[str] = None,
+        attr_version_end: Optional[str] = None,
         value: bool = False,
     ) -> None:
         self.key_word: str = key_word
         self.attr_version_start: str = attr_version_start
-        self.attr_version_end: Optional[str] = attr_verson_end
+        self.attr_version_end: Optional[str] = attr_version_end
         self.value: bool = value
 
 
