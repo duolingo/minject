@@ -10,7 +10,7 @@ _INJECT_DEFINE_FUNC = "inject_define"
 class RegistryMypyPlugin(Plugin):
     """
     This plugin exists to allow mypy to recognize the inject_define decorator
-    as identical to attr.define. Mypy will not apply it's attrs plugin unless
+    as identical to attr.define. Mypy will not apply its attrs plugin unless
     these two hooks are called.
 
     I do not fully understand what these hooks do. This is just copying

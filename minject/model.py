@@ -75,7 +75,7 @@ class Deferred(abc.ABC, Generic[T_co]):
 
 
 Resolvable = Union[Deferred[T_co], T_co]
-# Union of Deferred and Any is just Any, but want to call out that a Deffered is quite common
+# Union of Deferred and Any is just Any, but want to call out that a Deferred is quite common
 # and has special handling by the registry.
 DeferredAny: TypeAlias = Union[Deferred, Any]
 
