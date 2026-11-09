@@ -2,6 +2,7 @@ schema_version: 1
 owner:
   team: "5e39920b835c10012009d96b446e0000" # Platform - Service Delivery
 technology-type: [library]
+audience: external
 lifecycle:
   state: production
   context: ""
